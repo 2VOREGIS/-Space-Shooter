@@ -2,10 +2,17 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>🚀 Space Shooter</title>
 <style>
-html, body {height: 100%;overscroll-behavior: none;}
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: fixed; /* Empêche le rebond élastique sur Firefox/iOS */
+}
 *{margin:0;padding:0;box-sizing:border-box;touch-action:none}
 body{background:#000;color:#fff;font-family:system-ui;overflow:hidden}
 header{position:fixed;top:0;width:100%;height:48px;display:flex;justify-content:space-between;align-items:center;padding:0 12px;background:rgba(0,0,0,.6);z-index:10;font-size:14px}
@@ -578,19 +585,57 @@ function playVictoryFinalWithRecordBonus() {
 }
 
 function requestFullscreenMobile() {
-	const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-	if (!isTouchDevice) return;
-	const el = document.documentElement;
-	if (!document.fullscreenElement) {
-		if (el.requestFullscreen) {
-			el.requestFullscreen();
-		} else if (el.webkitRequestFullscreen) {
-			el.webkitRequestFullscreen();
-		}
-	}
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (!isTouchDevice) return;
+
+    const el = document.documentElement;
+    const requestMethod = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+
+    if (requestMethod) {
+        requestMethod.call(el).then(() => {
+            // Une fois en plein écran, on attend un peu et on recalcule
+            setTimeout(resize, 300);
+        }).catch(err => {
+            console.log("Erreur plein écran:", err);
+        });
+    }
 }
 
-function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
+
+let resizeTimeout;
+function resize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        // Priorité au visualViewport pour Firefox Mobile
+        const vw = window.visualViewport;
+        const width = vw ? vw.width : window.innerWidth;
+        const height = vw ? vw.height : window.innerHeight;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Repositionner le joueur s'il sort de l'écran après resize
+        if (player) {
+            if (player.x > canvas.width) player.x = canvas.width / 2;
+            if (player.y > canvas.height) player.y = canvas.height - 50;
+        }
+    }, 150); // Petit délai de 150ms pour laisser Firefox se stabiliser
+}
+
+window.addEventListener('resize', resize);
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+}
+
+// Utilise un délai pour laisser le temps au navigateur de finir sa transition de barre d'adresse
+window.addEventListener("resize", () => {
+    setTimeout(resize, 100);
+});
+
+// Ajout spécifique pour Firefox Mobile
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+}
 resize();
 window.addEventListener("resize",resize);
 
