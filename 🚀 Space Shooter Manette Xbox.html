@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>🚀 Space Shooter</title>
+<style>
+html, body {height: 100%;width: 100%;margin: 0;padding: 0;overflow: hidden;position: fixed; /* Empêche le rebond élastique sur Firefox/iOS */}
+*{margin:0;padding:0;box-sizing:border-box;touch-action:none}
+body{background:#000;color:#fff;font-family:system-ui;overflow:hidden}
+header{position:fixed;top:0;width:100%;height:48px;display:flex;justify-content:space-between;align-items:center;padding:0 12px;background:rgba(0,0,0,.6);z-index:10;font-size:14px}
+canvas{display:block}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;background:radial-gradient(circle at bottom,#020024,#000);z-index:20}
+.hidden{display:none}
+button{width:260px;padding:14px;font-size:16px;border:none;border-radius:30px;background:#ffcc00;cursor:pointer;margin:8px 0}
+#BoutonInfo {position: fixed;bottom: 10px;width:105px;height:45px;background:#ffcc00;cursor:pointer}
+#BoutonInfo {outline: none;-webkit-tap-highlight-color: transparent;}
+#BoutonInfo:focus,
+#BoutonInfo:active {outline: none;box-shadow: none;}
+#MsGbuton {text-align: center;}
+#levelShopItems{display:flex;flex-direction:column;align-items:center;gap:12px;margin:20px 0;width:100%}
+#levelShopItems button{background:#222;color:#fff;width:260px;margin:0}
+#controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:180px;height:180px;z-index:10}
+#base{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at center, rgba(255,255,255,.12), rgba(255,255,255,.04));position:relative;border:2px solid rgba(255,255,255,.2);box-shadow:0 4px 20px rgba(0,0,0,.3), inset 0 2px 10px rgba(255,255,255,.1);}
+#stick{width:60px;height:60px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #ffee00, #ffcc00, #ff9900);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 4px 15px rgba(255,204,0,.5), inset 0 -2px 8px rgba(0,0,0,.3), inset 0 2px 8px rgba(255,255,255,.4);border:2px solid rgba(255,255,255,.3);transition:transform .1s ease-out;}
+#fire{position:absolute;top:50%;left:50%;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #ff5533, #ff3300, #cc2200);opacity:.9;transform:translate(-50%,-50%);box-shadow:0 0 20px rgba(255,51,0,.6), 0 4px 15px rgba(255,51,0,.4), inset 0 -2px 8px rgba(0,0,0,.3), inset 0 2px 8px rgba(255,100,50,.4);border:2px solid rgba(255,100,50,.5);transition:all .1s ease;}
+#fire:active{transform:translate(-50%,-50%) scale(0.95);box-shadow:0 0 30px rgba(255,51,0,.8), 0 2px 10px rgba(255,51,0,.6);}
+.star {position: absolute;background: white;border-radius: 50%;opacity: 0.8;animation: twinkle infinite ease-in-out;z-index: 1;}
+@keyframes twinkle {0%, 100% { opacity: 0.9; }50% { opacity: 0.3; }}
+.shooting-star {position: absolute;width: 150px;height: 2px;background: linear-gradient(90deg, white, transparent);opacity: 0.8;transform: rotate(-25deg);animation: shoot 1.2s linear forwards;z-index: 2;}
+@keyframes shoot {from {transform: translate(0, 0) rotate(-25deg);opacity: 1;} to {transform: translate(600px, 300px) rotate(-25deg);opacity: 0;}}
+.Br-msg {display: block;text-align: center;}
+#levelIntro{position: fixed;inset: 0;display: flex;justify-content: center;align-items: center;font-size: 48px;font-weight: bold;letter-spacing: 4px;background: rgba(0,0,0,0.85);z-index: 30;opacity: 0;transform: scale(0.8);pointer-events: none;}
+#levelIntro.show{animation: levelIntroAnim 2s ease forwards;}
+@keyframes levelIntroAnim{0%{opacity: 0;transform: scale(0.6);}30%{opacity: 1;transform: scale(1);}70%{opacity: 1;transform: scale(1);}100%{opacity: 0;transform: scale(1.4);}}
+.no-touch #controls {display: none;}
+#PseudoLogo{font-size:100px}
+</style>
+</head>
+<body>
+<header id="ui"><span id="levelUI">Niveau: 1</span><span id="scoreUI">Score: 0</span><span id="livesUI">❤️❤️❤️</span><span id="coinsUI">🪙 0</span></header>
+<div id="menu" class="screen"><h1 id="PseudoLogo">🚀</h1><br><h1>Space Shooter</h1>character emoji icon<h2></h2><button onclick="requestFullscreenMobile(); startGame();">▶️ Jouer</button><button id="BoutonInfo" onclick="requestFullscreenMobile(); playClickTwoTone(); BoutonInfo();">💬 Info</button></div>
+<div id="levelComplete" class="screen hidden"><h2>🏆- Niveau Terminé -🏆</h2><p id="levelMsg"></p><h3>Boutique disponible</h3><div id="levelShopItems"></div><button onclick="requestFullscreenMobile(); nextLevel(); playClickTwoTone(); playIntroMusic()">➡️ Niveau Suivant</button></div>
+<div id="victory" class="screen hidden">
+<h2>🏆- VICTOIRE -🏆</h2>
+<p id="victoryMsg"></p>
+<p>Score Final : <span id="victoryScore"></span></p>
+<p>Meilleur Score : <span id="MeilleurScore"></span></p>
+<button onclick="playClickTwoTone(); backToMenu()">🏠 Menu</button>
+</div>
+<div id="MsGbuton" class="screen hidden">
+<h2>⭐- Space Shooter -⭐</h2><br>
+<p>Space Shooter, le jeu d’arcade<br>en HTML, CSS et JavaScript.<br>Créé par Régis Devaux.<br>
+<br>Facile à distribuer<br>Simple à héberger<br>PC et smartphone<br>Utilisable hors ligne<br><br>💛 Ce jeu est gratuit.<br> son code est libre.<br> Si vous souhaitez soutenir le<br>créateur, un don est toujours apprécié.<br>
+<br>🤝 <a href="https://www.paypal.com/donate/?hosted_button_id=WX5Z3HUSKRNY2" target="_blank" rel="noopener noreferrer">Faire un don</a><br></p>
+<br><br><button onclick="requestFullscreenMobile(); backToMenu(); playClickTwoTone()">🏠 Menu</button>
+</div>
+
+<div id="gameover" class="screen hidden"><h2>💥- Game Over -💥</h2><p>Niveau : <span id="currentLevel"></span></p><p>Score : <span id="finalScore"></span></p><p>Record : <span id="bestScore"></span></p><button onclick="requestFullscreenMobile(); backToMenu(); playClickTwoTone()">🏠 Menu</button></div>  
+<div id="controls"><div id="base"><div id="stick"></div><div id="fire"></div></div></div>
+<div id="levelIntro" class="hidden">NIVEAU 1</div>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const menu = document.getElementById("menu");
+let gameState = "menu";
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+if (!isTouchDevice) {document.body.classList.add("no-touch");}
+
+// ====== SYSTÈME DE VIBRATION ======
+function vibrate(pattern) {
+    // 1. Vibration pour mobile
+    if (navigator.vibrate) {
+        navigator.vibrate(pattern);
+    }
+
+    // 2. Vibration pour Manette Xbox (Chrome/Edge/Opera)
+	// la vibration manette ne fonctionne pas sur Firefox non prise en compte ??
+    // On récupère l'état instantané des manettes
+    const gamepads = navigator.getGamepads();
+    
+    for (let i = 0; i < gamepads.length; i++) {
+        const gp = gamepads[i];
+        
+        // On vérifie si la manette est connectée et possède un moteur
+        if (gp && gp.vibrationActuator) {
+            // Déterminer la durée (si pattern est un tableau [50, 30], on prend 50)
+            const duration = Array.isArray(pattern) ? pattern[0] : pattern;
+
+            gp.vibrationActuator.playEffect("dual-rumble", {
+                startDelay: 0,
+                duration: duration,
+                weakMagnitude: 1.0, // Moteur haute fréquence (petites secousses)
+                strongMagnitude: 0.6 // Moteur basse fréquence (vibrations lourdes)
+            }).catch(e => {
+                console.warn("La vibration n'a pas pu être lancée:", e);
+            });
+        }
+    }
+}
+// ===== Manette =====
+let gamepadIndex = null;
+
+// ====== AJOUT : GESTION MANETTE ======
+let firefoxGamepadWarned = false;
+
+window.addEventListener("gamepadconnected", (e) => {
+    console.log("Manette connectée :", e.gamepad.id);
+    gamepadIndex = e.gamepad.index;
+
+    const isFirefox = navigator.userAgent.includes("Firefox");
+
+    if (isFirefox && !firefoxGamepadWarned) {
+        firefoxGamepadWarned = true;
+
+        console.info(
+            "ℹ️ Firefox ne supporte pas la vibration des manettes. " +
+            "Pour l’activer, utilisez Chrome ou Edge."
+        );
+
+        showToast(
+            "🎮 Vibration manette indisponible sur Firefox.\n" +
+            "Utilisez Chrome ou Edge pour l’activer."
+        );
+    }
+});
+
+window.addEventListener("gamepaddisconnected", (e) => {
+    console.log("Manette déconnectée");
+    gamepadIndex = null;
+});
+function showToast(text, duration = 4000) {
+    const toast = document.createElement("div");
+    toast.textContent = text;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.85);
+        color: #fff;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-size: 14px;
+        text-align: center;
+        z-index: 9999;
+        max-width: 90%;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), duration);
+}
+
+function handleGamepad() {
+    if (gamepadIndex === null) return;
+    const gp = navigator.getGamepads()[gamepadIndex];
+    if (!gp) return;
+    // 1. Gestion du Menu (Bouton Start / Options)
+    if (gameState === "menu" && gp.buttons[9].pressed) { // 9 est souvent Start
+        startGame();
+    }
+    // 2. Mouvement (Stick Analogique Gauche)
+    // On applique une "deadzone" de 0.1 pour éviter que le vaisseau bouge tout seul
+    const deadzone = 0.1;
+    let gpX = gp.axes[0];
+    let gpY = gp.axes[1];
+    moveX = Math.abs(gpX) > deadzone ? gpX : 0;
+    moveY = Math.abs(gpY) > deadzone ? gpY : 0;
+    // 3. Tir (Bouton A / Croix - Index 0)
+    shoot = gp.buttons[0].pressed;
+}
+
+// ====== SYSTÈME AUDIO ======
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+	const oscillator = audioContext.createOscillator();
+	const gainNode = audioContext.createGain();
+	oscillator.connect(gainNode);
+	gainNode.connect(audioContext.destination);
+	
+	switch(type) {
+		case 'shoot':
+			oscillator.frequency.value = 440;
+			oscillator.type = 'square';
+			gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.1);
+			break;
+			
+		case 'explosion':
+			oscillator.frequency.value = 100;
+			oscillator.type = 'sawtooth';
+			gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.3);
+			vibrate(50);
+			break;
+			
+		case 'hit':
+			oscillator.frequency.value = 200;
+			oscillator.type = 'triangle';
+			gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.15);
+			vibrate(30);
+			break;
+			
+		case 'damage':
+			oscillator.frequency.value = 150;
+			oscillator.type = 'sawtooth';
+			gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.2);
+			vibrate([50, 30, 50]);
+			break;
+			
+		case 'loot':
+			oscillator.frequency.value = 800;
+			oscillator.type = 'sine';
+			gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.2);
+			vibrate(20);
+			break;
+			
+		case 'bosshit':
+			oscillator.frequency.value = 80;
+			oscillator.type = 'sawtooth';
+			gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.25);
+			vibrate(40);
+			break;
+			
+		case 'bossdefeat':
+			oscillator.frequency.value = 50;
+			oscillator.type = 'sawtooth';
+			gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.8);
+			vibrate([100, 50, 100, 50, 200]);
+			break;
+	}
+}
+
+function playIntroMusic() {
+  const now = audioContext.currentTime;
+  const duration = 4.5;
+  
+  const melody = [
+    { freq: 392.00, time: 0.0, duration: 0.3 },
+    { freq: 523.25, time: 0.3, duration: 0.3 },
+    { freq: 659.25, time: 0.6, duration: 0.3 },
+    { freq: 783.99, time: 0.9, duration: 0.6 },
+    { freq: 659.25, time: 1.6, duration: 0.2 },
+    { freq: 783.99, time: 1.8, duration: 0.2 },
+    { freq: 1046.5, time: 2.0, duration: 0.8 },
+    { freq: 987.77, time: 2.9, duration: 0.3 },
+    { freq: 880.00, time: 3.2, duration: 0.3 },
+    { freq: 783.99, time: 3.5, duration: 0.4 },
+    { freq: 1046.5, time: 3.9, duration: 0.6 }
+  ];
+  
+  melody.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0, now + note.time);
+    gain.gain.linearRampToValueAtTime(0.15, now + note.time + 0.05);
+    gain.gain.linearRampToValueAtTime(0.12, now + note.time + 0.1);
+    gain.gain.setValueAtTime(0.12, now + note.time + note.duration - 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
+    
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + note.duration);
+  });
+  
+  const beats = [0, 0.6, 1.2, 1.8, 2.4, 3.0, 3.6, 4.2];
+  beats.forEach(time => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(80, now + time);
+    osc.frequency.exponentialRampToValueAtTime(40, now + time + 0.1);
+    gain.gain.setValueAtTime(0.25, now + time);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + time + 0.15);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + time);
+    osc.stop(now + time + 0.15);
+  });
+  
+  const bass = [
+    { freq: 130.81, time: 0.0, duration: 1.2 },
+    { freq: 164.81, time: 1.2, duration: 1.2 },
+    { freq: 196.00, time: 2.4, duration: 0.9 },
+    { freq: 130.81, time: 3.3, duration: 1.2 }
+  ];
+  
+  bass.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0, now + note.time);
+    gain.gain.linearRampToValueAtTime(0.08, now + note.time + 0.05);
+    gain.gain.setValueAtTime(0.08, now + note.time + note.duration - 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + note.duration);
+  });
+  
+  const pads = [
+    { freq: 261.63, time: 0.0 },
+    { freq: 329.63, time: 0.0 },
+    { freq: 392.00, time: 0.0 }
+  ];
+  pads.forEach(pad => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(pad.freq, now + pad.time);
+    gain.gain.setValueAtTime(0, now + pad.time);
+    gain.gain.linearRampToValueAtTime(0.04, now + pad.time + 1.0);
+    gain.gain.setValueAtTime(0.04, now + 3.5);
+    gain.gain.linearRampToValueAtTime(0.01, now + duration);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + pad.time);
+    osc.stop(now + duration);
+  });
+  
+  const finalChord = [
+    { freq: 523.25, time: 3.9 },
+    { freq: 659.25, time: 3.9 },
+    { freq: 1046.5, time: 3.9 }
+  ];
+  
+  finalChord.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0.15, now + note.time);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + 0.6);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + 0.6);
+  });
+}
+
+function playClickTwoTone() {
+  const now = audioContext.currentTime;
+
+  const notes = [
+    { freq: 600, time: 0.0 },
+    { freq: 900, time: 0.04 }
+  ];
+
+  notes.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0.12, now + note.time);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + note.time + 0.04);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + 0.04);
+  });
+}
+
+function playGameOver() {
+  const now = audioContext.currentTime;
+  const duration = 3.5;
+  
+  const melody = [
+    { freq: 523.25, time: 0.0, duration: 0.4 },
+    { freq: 493.88, time: 0.3, duration: 0.4 },
+    { freq: 440.00, time: 0.6, duration: 0.4 },
+    { freq: 392.00, time: 0.9, duration: 0.4 },
+    { freq: 349.23, time: 1.2, duration: 0.5 },
+    { freq: 329.63, time: 1.7, duration: 0.5 },
+    { freq: 293.66, time: 2.2, duration: 0.6 },
+    { freq: 261.63, time: 2.8, duration: 0.7 }
+  ];
+  
+  melody.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0, now + note.time);
+    gain.gain.linearRampToValueAtTime(0.12, now + note.time + 0.08);
+    gain.gain.linearRampToValueAtTime(0.09, now + note.time + 0.15);
+    gain.gain.setValueAtTime(0.09, now + note.time + note.duration - 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + note.duration);
+  });
+  
+  const crashTime = 0.0;
+  const crash = audioContext.createOscillator();
+  const crashGain = audioContext.createGain();
+  crash.type = "square";
+  crash.frequency.setValueAtTime(180, now + crashTime);
+  crash.frequency.exponentialRampToValueAtTime(60, now + crashTime + 0.3);
+  crashGain.gain.setValueAtTime(0.3, now + crashTime);
+  crashGain.gain.exponentialRampToValueAtTime(0.01, now + crashTime + 0.3);
+  crash.connect(crashGain);
+  crashGain.connect(audioContext.destination);
+  crash.start(now + crashTime);
+  crash.stop(now + crashTime + 0.3);
+  
+  const bass = [
+    { freq: 130.81, time: 0.0, duration: 1.2 },
+    { freq: 116.54, time: 1.2, duration: 1.2 },
+    { freq: 110.00, time: 2.4, duration: 1.1 }
+  ];
+  
+  bass.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0, now + note.time);
+    gain.gain.linearRampToValueAtTime(0.15, now + note.time + 0.1);
+    gain.gain.setValueAtTime(0.15, now + note.time + note.duration - 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + note.duration);
+  });
+  
+  const glissando = audioContext.createOscillator();
+  const glissandoGain = audioContext.createGain();
+  glissando.type = "triangle";
+  glissando.frequency.setValueAtTime(1200, now + 0.05);
+  glissando.frequency.exponentialRampToValueAtTime(200, now + 0.6);
+  glissandoGain.gain.setValueAtTime(0.08, now + 0.05);
+  glissandoGain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+  glissando.connect(glissandoGain);
+  glissandoGain.connect(audioContext.destination);
+  glissando.start(now + 0.05);
+  glissando.stop(now + 0.6);
+  
+  const pads = [
+    { freq: 261.63, time: 0.5 },
+    { freq: 311.13, time: 0.5 },
+    { freq: 349.23, time: 0.5 }
+  ];
+  
+  pads.forEach(pad => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(pad.freq, now + pad.time);
+    gain.gain.setValueAtTime(0, now + pad.time);
+    gain.gain.linearRampToValueAtTime(0.03, now + pad.time + 0.8);
+    gain.gain.setValueAtTime(0.03, now + 2.5);
+    gain.gain.linearRampToValueAtTime(0.01, now + duration);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + pad.time);
+    osc.stop(now + duration);
+  });
+  
+  const finalNotes = [
+    { freq: 130.81, time: 2.8 },
+    { freq: 164.81, time: 2.8 },
+    { freq: 196.00, time: 2.8 }
+  ];
+  
+  finalNotes.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0.1, now + note.time);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + 0.7);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + 0.7);
+  });
+  
+  const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.2, audioContext.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) {
+    noiseData[i] = Math.random() * 2 - 1;
+  }
+  
+  const noise = audioContext.createBufferSource();
+  const noiseGain = audioContext.createGain();
+  const noiseFilter = audioContext.createBiquadFilter();
+  noise.buffer = noiseBuffer;
+  noiseFilter.type = "lowpass";
+  noiseFilter.frequency.value = 800;
+  noiseGain.gain.setValueAtTime(0.15, now + 0.05);
+  noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+  noise.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(audioContext.destination);
+  noise.start(now + 0.05);
+  noise.stop(now + 0.25);
+}
+
+function playVictoryFinal() {
+  const now = audioContext.currentTime;
+
+  const melody = [
+    { freq: 392.00, time: 0.0, duration: 0.5 },
+    { freq: 523.25, time: 0.5, duration: 0.5 },
+    { freq: 659.25, time: 1.0, duration: 0.6 },
+    { freq: 783.99, time: 1.6, duration: 1.2 }
+  ];
+
+  melody.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0, now + note.time);
+    gain.gain.linearRampToValueAtTime(0.15, now + note.time + 0.1);
+    gain.gain.setValueAtTime(0.15, now + note.time + note.duration - 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + note.duration);
+  });
+
+  const finalChord = [
+    { freq: 261.63 },
+    { freq: 329.63 },
+    { freq: 392.00 },
+    { freq: 523.25 }
+  ];
+
+  finalChord.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(note.freq, now + 1.8);
+    gain.gain.setValueAtTime(0.12, now + 1.8);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 4.0);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + 1.8);
+    osc.stop(now + 4.0);
+  });
+
+  const bass = audioContext.createOscillator();
+  const bassGain = audioContext.createGain();
+  bass.type = "sine";
+  bass.frequency.setValueAtTime(130.81, now);
+  bassGain.gain.setValueAtTime(0.18, now);
+  bassGain.gain.exponentialRampToValueAtTime(0.01, now + 4);
+  bass.connect(bassGain);
+  bassGain.connect(audioContext.destination);
+  bass.start(now);
+  bass.stop(now + 4);
+}
+
+function playVictoryFinalWithRecordBonus() {
+  const now = audioContext.currentTime;
+  
+  const melody = [
+    { freq: 392.00, time: 0.0, duration: 0.5 },
+    { freq: 523.25, time: 0.5, duration: 0.5 },
+    { freq: 659.25, time: 1.0, duration: 0.6 },
+    { freq: 783.99, time: 1.6, duration: 1.2 }
+  ];
+
+  melody.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(note.freq, now + note.time);
+    gain.gain.setValueAtTime(0, now + note.time);
+    gain.gain.linearRampToValueAtTime(0.15, now + note.time + 0.1);
+    gain.gain.setValueAtTime(0.15, now + note.time + note.duration - 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + note.time);
+    osc.stop(now + note.time + note.duration);
+  });
+
+  const finalChord = [261.63, 329.63, 392.00, 523.25];
+  finalChord.forEach(freq => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(freq, now + 1.8);
+    gain.gain.setValueAtTime(0.12, now + 1.8);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 4.0);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + 1.8);
+    osc.stop(now + 4.0);
+  });
+
+  const bass = audioContext.createOscillator();
+  const bassGain = audioContext.createGain();
+  bass.type = "sine";
+  bass.frequency.setValueAtTime(130.81, now);
+  bassGain.gain.setValueAtTime(0.18, now);
+  bassGain.gain.exponentialRampToValueAtTime(0.01, now + 4);
+  bass.connect(bassGain);
+  bassGain.connect(audioContext.destination);
+  bass.start(now);
+  bass.stop(now + 4);
+  
+  const bonusStart = now + 4.1;
+  const bonusMelody = [
+    { freq: 783.99, time: 0.0, duration: 0.15 },
+    { freq: 987.77, time: 0.15, duration: 0.15 },
+    { freq: 1174.66, time: 0.30, duration: 0.2 },
+    { freq: 1567.98, time: 0.55, duration: 0.4 }
+  ];
+
+  bonusMelody.forEach(note => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(note.freq, bonusStart + note.time);
+    gain.gain.setValueAtTime(0, bonusStart + note.time);
+    gain.gain.linearRampToValueAtTime(0.14, bonusStart + note.time + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.01, bonusStart + note.time + note.duration);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(bonusStart + note.time);
+    osc.stop(bonusStart + note.time + note.duration);
+  });
+  
+  const sparkleChord = [1046.50, 1318.51, 1567.98];
+  sparkleChord.forEach(freq => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, bonusStart + 0.6);
+    gain.gain.setValueAtTime(0.1, bonusStart + 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.01, bonusStart + 1.6);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(bonusStart + 0.6);
+    osc.stop(bonusStart + 1.6);
+  });
+}
+
+function requestFullscreenMobile() {
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (!isTouchDevice) return;
+
+    const el = document.documentElement;
+    const requestMethod = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+
+    if (requestMethod) {
+        requestMethod.call(el).then(() => {
+            // Une fois en plein écran, on attend un peu et on recalcule
+            setTimeout(resize, 300);
+        }).catch(err => {
+            console.log("Erreur plein écran:", err);
+        });
+    }
+}
+
+
+let resizeTimeout;
+function resize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        // Priorité au visualViewport pour Firefox Mobile
+        const vw = window.visualViewport;
+        const width = vw ? vw.width : window.innerWidth;
+        const height = vw ? vw.height : window.innerHeight;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Repositionner le joueur s'il sort de l'écran après resize
+        if (player) {
+            if (player.x > canvas.width) player.x = canvas.width / 2;
+            if (player.y > canvas.height) player.y = canvas.height - 50;
+        }
+    }, 150); // Petit délai de 150ms pour laisser Firefox se stabiliser
+}
+
+window.addEventListener('resize', resize);
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+}
+
+// Utilise un délai pour laisser le temps au navigateur de finir sa transition de barre d'adresse
+window.addEventListener("resize", () => {
+    setTimeout(resize, 100);
+});
+
+// Ajout spécifique pour Firefox Mobile
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+}
+resize();
+window.addEventListener("resize",resize);
+
+let bestScore=+localStorage.getItem("bestScore")||0;
+let coins=+localStorage.getItem("coins")||0;
+let ownedSkins=JSON.parse(localStorage.getItem("skins")||"[0]");
+let activeSkin=+localStorage.getItem("activeSkin")||0;
+let ownedWeapons=JSON.parse(localStorage.getItem("weapons")||"[0]");
+let activeWeapon=+localStorage.getItem("activeWeapon")||0;
+let loots = [];
+let skullWeaponActive = false;
+let skullWeaponTimer = 0;
+
+const skins=[
+ {id:0,name:"🛰 vaisseau - T01",price:0,color:"lime",shield:0},
+ {id:1,name:"🛡️ Bouclier Bronze",price:200,color:"cyan",shield:100},
+ {id:2,name:"🛡️ Bouclier Or",price:500,color:"gold",shield:250}
+];
+
+const weapons=[
+ {id:0,name:"🗡 Tir Simple",price:0,type:"simple",damage:5},
+ {id:1,name:"⚔ Tir Double",price:500,type:"double",damage:8},
+ {id:2,name:"⚒ Tir Mortel",price:150,type:"skull",damage:15}
+];
+
+const backgrounds={
+  1:"#001a33",
+  2:"#1a0033",
+  3:"#331a00",
+  4:"#1a0000",
+  5:"#00331a", 
+  6:"#1a001a" 
+}
+
+function createStars() {
+	const numberOfStars = 250;
+	for (let i = 0; i < numberOfStars; i++) {
+	const star = document.createElement('div');
+	star.className = 'star';
+	const size = Math.random() * 2.5 + 0.5;
+	star.style.width = size + 'px';
+	star.style.height = size + 'px';
+	star.style.left = Math.random() * 100 + 'vw';
+	star.style.top = Math.random() * 100 + 'vh';
+	star.style.animationDuration = (Math.random() * 3 + 1) + 's';
+	document.body.appendChild(star);
+	}
+}
+
+function createShootingStar() {
+	const star = document.createElement('div');
+	star.className = 'shooting-star';
+	star.style.left = Math.random() * window.innerWidth + 'px';
+	star.style.top = Math.random() * window.innerHeight * 0.6 + 'px';
+	document.body.appendChild(star);
+	setTimeout(() => star.remove(), 1200);
+}
+
+setInterval(createShootingStar, 800);
+setInterval(() => {
+	for (let i = 0; i < 3; i++) {
+		setTimeout(createShootingStar, i * 150);
+	}
+}, 5000);
+
+createStars();
+
+let playerShield, maxPlayerShield;
+let player,bullets,enemies,enemyBullets,boss,explosions;
+let score,lives,frame,invincible,respawning,currentLevel;
+
+const keys = {
+	left: false, right: false, up: false, down: false, shoot: false
+};
+
+window.addEventListener("keydown", e => {
+	if (gameState !== "play") return;
+	switch (e.code) {
+		case "ArrowLeft": case "KeyQ": keys.left = true; break;
+		case "ArrowRight": case "KeyD": keys.right = true; break;
+		case "ArrowUp": case "KeyZ": keys.up = true; break;
+		case "ArrowDown": case "KeyS": keys.down = true; break;
+		case "Space": keys.shoot = true; break;
+	}
+});
+
+window.addEventListener("keyup", e => {
+	switch (e.code) {
+		case "ArrowLeft": case "KeyQ": keys.left = false; break;
+		case "ArrowRight": case "KeyD": keys.right = false; break;
+		case "ArrowUp": case "KeyZ": keys.up = false; break;
+		case "ArrowDown": case "KeyS": keys.down = false; break;
+		case "Space": keys.shoot = false; break;
+	}
+});
+
+let moveX=0,moveY=0,shoot=false;
+const base=document.getElementById("base");
+const stick=document.getElementById("stick");
+const fire=document.getElementById("fire");
+
+base.ontouchmove=e=>{
+	const r=base.getBoundingClientRect();
+	moveX=Math.max(-1,Math.min(1,(e.touches[0].clientX-r.left-r.width/2)/(r.width/2)));
+	moveY=Math.max(-1,Math.min(1,(e.touches[0].clientY-r.top-r.height/2)/(r.height/2)));
+	stick.style.transform=`translate(${moveX*40-50}%,${moveY*40-50}%)`;
+};
+
+base.ontouchend=()=>{moveX=moveY=0;stick.style.transform="translate(-50%,-50%)"};
+fire.ontouchstart=()=>shoot=true;
+fire.ontouchend=()=>shoot=false;
+
+function BoutonInfo(){		
+	 gameState = "over";
+	// ⚠️ On affiche le message info ici
+	document.getElementById("MsGbuton").classList.remove("hidden");
+
+}
+
+function createExplosion(x,y,size){
+	explosions.push({x,y,size,frame:0,maxFrame:20});
+	playSound('explosion');
+}
+
+function spawnLoot(type, x, y) {
+	loots.push({
+		x: x || Math.random() * (canvas.width - 40) + 20,
+		y: y || -30,
+		type,
+		speed: 2
+	});
+}
+
+function showLevelIntro(){
+	const intro = document.getElementById("levelIntro");
+	intro.textContent = `NIVEAU ${currentLevel}`;
+	intro.classList.remove("hidden");
+	intro.classList.add("show");
+	gameState = "pause";
+	setTimeout(()=>{
+		intro.classList.remove("show");
+		intro.classList.add("hidden");
+		gameState = "play";
+		loop();
+	}, 2000);
+}
+
+function reset(){
+	player = { x: canvas.width / 2, y: canvas.height + 40 };
+	bullets = [];
+	enemies = [];
+	enemyBullets = [];
+	explosions = [];
+	score = 0;
+	lives = 3;
+	frame = 0;
+	boss = null;
+	invincible = 0;
+	respawning = true;
+	currentLevel = 1;
+	
+	maxPlayerShield = skins[activeSkin].shield;
+	playerShield = maxPlayerShield;
+	
+	loots = [];
+	skullWeaponActive = false;
+	skullWeaponTimer = 0;
+}
+
+function startGame(){
+ audioContext.resume();
+ playIntroMusic();
+ gameState = "play";
+ document.getElementById("menu").classList.add("hidden");
+ document.getElementById("gameover").classList.add("hidden");
+ document.getElementById("victory").classList.add("hidden");
+ reset();
+ updateBackground();
+	showLevelIntro();
+}
+
+function updateBackground(){
+	document.body.style.background=backgrounds[currentLevel]||"#000";
+}
+
+function loop(){
+    if(gameState!=="play") return;
+    
+    handleGamepad(); // <-- On appelle la manette à chaque frame
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+function isColliding(a, b, sizeA = 20, sizeB = 15) {
+	return (
+		Math.abs(a.x - b.x) < sizeA + sizeB &&
+		Math.abs(a.y - b.y) < sizeA + sizeB
+	);
+}
+
+// ====== MODIFICATION DE LA FONCTION UPDATE (Mouvements) ======
+
+function update(){
+    try {
+        if(gameState !== "play") return;
+        frame++;
+        if(invincible>0)invincible--;
+        
+        if(respawning){
+            player.y-=6;
+            if(player.y<=canvas.height-300){respawning=false;}
+        }else{
+            let x = 0;
+            let y = 0;
+            if (keys.left) x -= 1;
+            if (keys.right) x += 1;
+            if (keys.up) y -= 1;
+            if (keys.down) y += 1;
+
+            // handleGamepad() met déjà à jour moveX et moveY
+            x += moveX; 
+            y += moveY;
+
+            const len = Math.hypot(x, y);
+            if (len > 1) { x /= len; y /= len; }
+            
+            player.x += x * 6;
+            player.y += y * 6;
+            
+            // Le tir clavier ET manette sont combinés ici
+            shoot = shoot || keys.shoot;
+        }
+
+	
+		player.x=Math.max(20,Math.min(canvas.width-20,player.x));
+		player.y=Math.max(60,Math.min(canvas.height-20,player.y));
+		
+		const weaponData = weapons[activeWeapon];
+		if(shoot && !respawning && frame%8===0){
+			playSound('shoot');
+			if(activeWeapon===0){
+				bullets.push({x:player.x,y:player.y,damage:weaponData.damage});
+			}else if(activeWeapon===1){
+				bullets.push({x:player.x-10,y:player.y,damage:weaponData.damage});
+				bullets.push({x:player.x+10,y:player.y,damage:weaponData.damage});
+			}else if (activeWeapon === 2) {
+				if (frame % 12 === 0) {
+					for (let a = -0.3; a <= 0.3; a += 0.3) {
+						bullets.push({
+							x: player.x + Math.sin(a) * 10,
+							y: player.y,
+							damage: weaponData.damage,
+							vx: Math.sin(a) * 2
+						});
+					}
+				}
+			}
+		}
+		
+		bullets.forEach((b,i)=>{
+			b.y -= 10;
+			if (b.vx) b.x += b.vx;
+			if (b.y < 0 || b.x < 0 || b.x > canvas.width) bullets.splice(i,1);
+		});
+
+// Difficulté croissante selon le niveau
+const enemySpawnRate = currentLevel <= 1 ? 50 : (currentLevel >= 5 ? 25 : 40);
+
+if (frame % enemySpawnRate === 0) {
+    let canShoot = false;
+    let health = 1;
+    let size = 16;
+
+    if (currentLevel >= 2) {
+        // Plus on monte en niveau, plus ils tirent et sont résistants
+        const shootChance = currentLevel >= 5 ? 0.6 : (currentLevel === 4 ? 0.5 : 0.33);
+        canShoot = Math.random() < shootChance;
+        size = canShoot ? 20 : 16;
+        health = currentLevel >= 5 ? 5 : (canShoot ? 3 : 2);
+    }
+
+    enemies.push({
+        x: Math.random() * (canvas.width - 40) + 20,
+        y: -30,
+        canShoot,
+        shootTimer: 0,
+        size,
+        health
+    });
+}
+
+		
+		enemies.forEach((e, i) => {
+			e.y += 2 + currentLevel * 0.5;
+			
+			if (!respawning && invincible === 0 && isColliding(player, e, 20, e.size)) {
+				createExplosion(e.x, e.y, 30);
+				enemies.splice(i, 1);
+				
+				if (playerShield > 0) {
+					playerShield -= 40;
+					if (playerShield < 0) playerShield = 0;
+					invincible = 40;
+					playSound('damage');
+				} else {
+					lives--;
+					invincible = 60;
+					respawning = true;
+					player.y = canvas.height + 40;
+					playSound('damage');
+					vibrate([100, 50, 100]);
+					if (lives <= 0) {
+						endGame();
+						return;
+					}
+				}
+				return;
+			}
+			
+			if (e.canShoot) {
+				e.shootTimer++;
+				if (e.shootTimer % Math.max(90 - currentLevel * 15, 40) === 0) {
+					enemyBullets.push({ x: e.x, y: e.y, vx: 0, vy: 4 });
+				}
+			}
+			
+			bullets.forEach((b, j) => {
+				if (Math.abs(b.x - e.x) < e.size && Math.abs(b.y - e.y) < e.size) {
+					bullets.splice(j, 1);
+					e.health -= 1;
+					playSound('hit');
+					
+					if (e.health <= 0) {
+						createExplosion(e.x, e.y, 30);
+						
+						const dropChance = Math.random();
+						
+						if (currentLevel === 1) {
+							coins += 20;
+						} else if (currentLevel === 2) {
+							coins += 30;
+						} else {
+							coins += 40;
+						}
+						
+						if (playerShield < maxPlayerShield * 0.3 && dropChance < 0.15) {
+							spawnLoot("shield", e.x, e.y);
+						}
+						
+						if (lives <= 1 && dropChance < 0.08) {
+							spawnLoot("life", e.x, e.y);
+						}
+						
+						enemies.splice(i, 1);
+						score += e.canShoot ? 15 : 10;
+					}
+				}
+			});
+			
+			if (e.y > canvas.height) enemies.splice(i, 1);
+		});
+		
+		if ((currentLevel === 3 || currentLevel === 4) && playerShield < maxPlayerShield * 0.5 && frame % 700 === 0) {
+			spawnLoot("shield");
+		}
+		
+		if (currentLevel === 4 && frame % 1000 === 0 && !skullWeaponActive) {
+			spawnLoot("skull");
+		}
+		
+		loots.forEach((l, i) => {
+			l.y += l.speed;
+			
+			if (isColliding(player, l, 20, 20)) {
+				playSound('loot');
+				if (l.type === "shield") {
+					playerShield = Math.min(playerShield + maxPlayerShield, maxPlayerShield * 2);
+				}
+				
+				if (l.type === "skull") {
+					skullWeaponActive = true;
+					skullWeaponTimer = 600;
+					activeWeapon = 2;
+				}
+				
+				if (l.type === "life") {
+					if (lives < 3) lives++;
+				}
+				
+				loots.splice(i, 1);
+			}
+			
+			if (l.y > canvas.height) loots.splice(i, 1);
+		});
+		
+		if(currentLevel===1 && score>=400 && !boss){
+			levelComplete();
+			return;
+		}
+		
+// Seuil de score pour faire apparaître le boss du niveau
+const bossThreshold = currentLevel === 1 ? 200 : (currentLevel === 2 ? 300 : (currentLevel === 3 ? 400 : (currentLevel === 4 ? 500 : 600)));
+
+if (score >= bossThreshold && !boss) {
+    if (currentLevel === 1) {
+        boss = { x: canvas.width / 2, y: 120, life: 200, max: 200, phase: 1, timer: 0, type: "intro", id: 0, size: 50 };
+    } else if (currentLevel === 2) {
+        boss = { x: canvas.width / 2, y: 120, life: 400, max: 400, phase: 1, timer: 0, type: "normal", id: 1, size: 60 };
+    } else if (currentLevel === 3) {
+        boss = { x: canvas.width / 2, y: 120, life: 800, max: 800, phase: 1, timer: 0, type: "transform", form: 1, id: 2, size: 50 };
+    } else if (currentLevel === 4) {
+        boss = { x: canvas.width / 2, y: 120, life: 1200, max: 1200, phase: 1, timer: 0, type: "shield", shield: 300, maxShield: 300, form: 1, id: 3, size: 70 };
+    } else if (currentLevel === 5) {
+        boss = { x: canvas.width / 2, y: 120, life: 1600, max: 1600, phase: 1, timer: 0, type: "mirage", id: 4, size: 55 };
+    } else if (currentLevel === 6) {
+        boss = { x: canvas.width / 2, y: 120, life: 2500, max: 2500, phase: 1, timer: 0, type: "void", id: 5, size: 90 };
+    }
+}
+	
+		if(boss){
+			boss.timer++;
+		   // boss.x += Math.sin(frame/60) * 2;
+			// Mouvement latéral d'un bord à l'autre
+		if(!boss.direction) boss.direction = 1; // 1 = droite, -1 = gauche
+		const bossSpeed = 3;
+		const bossSize = boss.size || 60; // Utilise la taille définie ou 60 par défaut
+		boss.x += boss.direction * bossSpeed;
+		// Inversion de direction aux bords
+		if(boss.x <= bossSize + 20) {
+			boss.x = bossSize + 20;
+			boss.direction = 1;
+			} else if(boss.x >= canvas.width - bossSize - 20) {
+				boss.x = canvas.width - bossSize - 20;
+				boss.direction = -1;
+			}
+
+			if (!respawning && invincible === 0) {
+				let bossSize = boss.size;
+				if (boss.type === "transform") bossSize = 50 + boss.form * 10;
+				if (boss.type === "shield") bossSize = 70 + boss.form * 5;
+				
+				if (isColliding(player, boss, 20, bossSize)) {
+					createExplosion(player.x, player.y, 40);
+					
+					if (playerShield > 0) {
+						playerShield -= 50;
+						if (playerShield < 0) playerShield = 0;
+						invincible = 40;
+						playSound('damage');
+						vibrate([100, 50, 100, 50, 100]);
+						if (lives <= 0) {
+							endGame();
+							return;
+						}
+					}
+				}
+			}
+			
+			if(boss.type==="transform"){
+				if(boss.life<600 && boss.form===1){boss.form=2;boss.phase=2;}
+				if(boss.life<400 && boss.form===2){boss.form=3;boss.phase=3;}
+				if(boss.life<200 && boss.form===3){boss.form=4;boss.phase=4;}
+			}else if(boss.type==="shield"){
+				if(boss.life<800 && boss.form===1){boss.form=2;boss.phase=2;boss.shield=300;}
+				if(boss.life<500 && boss.form===2){boss.form=3;boss.phase=3;boss.shield=200;}
+				if(boss.life<200 && boss.form===3){boss.form=4;boss.phase=4;}
+			}else{
+				if(boss.life<boss.max*0.6)boss.phase=2;
+				if(boss.life<boss.max*0.3)boss.phase=3;
+			}
+			
+			if(boss.timer%40===0 && boss.phase===1)
+				enemyBullets.push({x:boss.x,y:boss.y,vx:0,vy:5});
+			
+			if(boss.timer%30===0 && boss.phase===2)
+				for(let a=0;a<Math.PI*2;a+=Math.PI/4)
+					enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*3,vy:Math.sin(a)*3});
+			
+			if(boss.timer%20===0 && boss.phase===3)
+				enemyBullets.push({x:boss.x,y:boss.y,vx:(player.x-boss.x)/50,vy:5});
+			
+			if(boss.phase===4 && boss.timer%15===0)
+				for(let a=0;a<Math.PI*2;a+=Math.PI/6)
+					enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*4,vy:Math.sin(a)*4});
+			
+			if(boss.type==="shield"){
+				if(boss.timer%25===0 && boss.phase===2)
+					for(let a=0;a<Math.PI*2;a+=Math.PI/3)
+						enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*5,vy:Math.sin(a)*5});
+				
+				if(boss.timer%10===0 && boss.phase===4)
+					for(let a=0;a<Math.PI*2;a+=Math.PI/8)
+						enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*6,vy:Math.sin(a)*6});
+			}
+			
+			bullets.forEach((b,i)=>{
+				if(Math.abs(b.x-boss.x)<boss.size && Math.abs(b.y-boss.y)<boss.size){
+					bullets.splice(i,1);
+					
+					if(boss.type==="shield" && boss.shield>0){
+						boss.shield -= b.damage || 5;
+						playSound('bosshit');
+						if(boss.shield<=0){
+							boss.shield=0;
+							createExplosion(boss.x,boss.y,40);
+						}
+					}else{
+						boss.life -= b.damage || 5;
+						playSound('bosshit');
+					}
+					
+if (boss.life <= 0) {
+    createExplosion(boss.x, boss.y, 80);
+    playSound('bossdefeat');
+    score += 1000;
+    coins += 300;
+    
+    // On sauvegarde la progression
+    localStorage.setItem("coins", coins);
+
+    // Si on a fini le niveau 6, c'est la victoire totale
+    if (currentLevel < 6) {
+        boss = null;
+        levelComplete(); 
+    } else {
+        boss = null;
+        finalVictory();
+    }
+    return; // On arrête l'update ici pour éviter les erreurs
+}
+
+				}
+			});
+		}
+		
+		enemyBullets.forEach((b,i)=>{
+			b.x+=b.vx;
+			b.y+=b.vy;
+			
+			if(!respawning && invincible===0 && Math.abs(b.x-player.x)<20 && Math.abs(b.y-player.y)<20){
+				enemyBullets.splice(i,1);
+				
+				if(playerShield > 0){
+					playerShield -= 20;
+					createExplosion(player.x, player.y, 25);
+					invincible = 30;
+					playSound('damage');
+					vibrate(40);
+					if(playerShield < 0) playerShield = 0;
+				} else {
+					lives--;
+					invincible=60;
+					respawning=true;
+					player.y=canvas.height+40;
+					playSound('damage');
+					vibrate([80, 50, 80]);
+					if(lives<=0) endGame();
+				}
+			}
+			
+			if(b.y>canvas.height || b.x<0 || b.x>canvas.width) enemyBullets.splice(i,1);
+		});
+		
+		explosions.forEach((e,i)=>{
+			e.frame++;
+			if(e.frame>=e.maxFrame)explosions.splice(i,1);
+		});
+		
+		if (skullWeaponActive) {
+			skullWeaponTimer--;
+			if (skullWeaponTimer <= 0) {
+				skullWeaponActive = false;
+				activeWeapon = ownedWeapons.includes(1) ? 1 : 0;
+			}
+		}
+		
+		document.getElementById("levelUI").textContent=`Niveau: ${currentLevel}`;
+		document.getElementById("scoreUI").textContent=`Score: ${score}`;
+		document.getElementById("coinsUI").textContent=`🪙${coins}`;
+		document.getElementById("livesUI").textContent="❤️".repeat(lives);
+	} catch (e) {
+		console.error("Erreur dans update()", e);
+		gameState = "pause";
+	}
+}
+
+function draw(){
+	ctx.clearRect(0,0,canvas.width,canvas.height);
+	
+	if(!respawning || invincible%10<5){
+		if(playerShield > 0 && maxPlayerShield > 0){
+			const shieldAlpha = (playerShield / maxPlayerShield) * 0.6;
+			const shieldPulse = Math.sin(frame / 10) * 5 + 35;
+			const gradient = ctx.createRadialGradient(
+				player.x, player.y, 0,
+				player.x, player.y, shieldPulse
+			);
+			gradient.addColorStop(0, `rgba(${skins[activeSkin].color === 'cyan' ? '0,200,255' : '255,215,0'}, ${shieldAlpha})`);
+			gradient.addColorStop(0.7, `rgba(${skins[activeSkin].color === 'cyan' ? '0,150,255' : '255,200,0'}, ${shieldAlpha * 0.3})`);
+			gradient.addColorStop(1, `rgba(${skins[activeSkin].color === 'cyan' ? '0,100,255' : '255,180,0'}, 0)`);
+			
+			ctx.fillStyle = gradient;
+			ctx.beginPath();
+			ctx.arc(player.x, player.y, shieldPulse, 0, Math.PI * 2);
+			ctx.fill();
+			
+			ctx.strokeStyle = `rgba(${skins[activeSkin].color === 'cyan' ? '100,220,255' : '255,230,100'}, ${shieldAlpha * 0.8})`;
+			ctx.lineWidth = 2;
+			ctx.beginPath();
+			ctx.arc(player.x, player.y, shieldPulse - 5, 0, Math.PI * 2);
+			ctx.stroke();
+		}
+		
+		ctx.fillStyle=skins[activeSkin].color;
+		ctx.beginPath();
+		ctx.moveTo(player.x,player.y-20);
+		ctx.lineTo(player.x-20,player.y+20);
+		ctx.lineTo(player.x+20,player.y+20);
+		ctx.fill();
+	}
+	
+	bullets.forEach(b=>{
+		ctx.fillStyle=activeWeapon===2?"#ff00ff":(activeWeapon===1?"cyan":"yellow");
+		ctx.fillRect(b.x-2,b.y-10,4,10);
+	});
+	
+	enemies.forEach(e=>{
+		ctx.fillStyle=e.canShoot?"darkred":"red";
+		ctx.fillRect(e.x-e.size,e.y-e.size,e.size*2,e.size*2);
+		
+		if (e.health > 1) {
+			const barW = e.size * 2;
+			const barH = 3;
+			ctx.fillStyle = "rgba(0,0,0,0.5)";
+			ctx.fillRect(e.x - e.size, e.y - e.size - 8, barW, barH);
+			ctx.fillStyle = "lime";
+			ctx.fillRect(e.x - e.size, e.y - e.size - 8, barW * (e.health / (e.canShoot ? 3 : 2)), barH);
+		}
+	});
+	
+	enemyBullets.forEach(b=>{
+		ctx.fillStyle="orange";
+		ctx.fillRect(b.x-4,b.y-4,8,8);
+	});
+	
+	explosions.forEach(e=>{
+		const progress=e.frame/e.maxFrame;
+		const size=e.size*(1-progress);
+		const alpha=1-progress;
+		ctx.fillStyle=`rgba(255,${100+progress*155},0,${alpha})`;
+		ctx.beginPath();
+		ctx.arc(e.x,e.y,size,0,Math.PI*2);
+		ctx.fill();
+		ctx.fillStyle=`rgba(255,255,0,${alpha*.5})`;
+		ctx.beginPath();
+		ctx.arc(e.x,e.y,size*.6,0,Math.PI*2);
+		ctx.fill();
+	});
+	
+	if(maxPlayerShield > 0){
+		document.getElementById("livesUI").textContent = "❤️".repeat(lives) + ` 🛡️${Math.max(0, Math.floor(playerShield))}`;
+	} else {
+		document.getElementById("livesUI").textContent = "❤️".repeat(lives);
+	}
+	
+	loots.forEach(l => {
+		ctx.font = "28px serif";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(
+			l.type === "shield" ? "🛡" : (l.type === "life" ? "❤️" : "⚒"),
+			l.x,
+			l.y
+		);
+	});
+	
+	if(boss){
+		if(boss.type==="transform"){
+			const colors=["purple","darkviolet","darkmagenta","crimson"];
+			ctx.fillStyle=colors[boss.form-1]||"purple";
+			const size=50+boss.form*10;
+			ctx.beginPath();
+			if(boss.form===4){
+				for(let i=0;i<8;i++){
+					const angle=i*Math.PI/4+frame/30;
+					const x=boss.x+Math.cos(angle)*size;
+					const y=boss.y+Math.sin(angle)*size;
+					if(i===0)ctx.moveTo(x,y);
+					else ctx.lineTo(x,y);
+				}
+			}else{
+				ctx.arc(boss.x,boss.y,size,0,Math.PI*2);
+			}
+			ctx.fill();
+		}else if(boss.type==="shield"){
+			const colors=["darkred","crimson","red","orangered"];
+			ctx.fillStyle=colors[boss.form-1]||"darkred";
+			const size=70+boss.form*5;
+			ctx.beginPath();
+			if(boss.form===4){
+				for(let i=0;i<10;i++){
+					const angle=i*Math.PI/5+frame/20;
+					const r=i%2===0?size:size*0.5;
+					const x=boss.x+Math.cos(angle)*r;
+					const y=boss.y+Math.sin(angle)*r;
+					if(i===0)ctx.moveTo(x,y);
+					else ctx.lineTo(x,y);
+				}
+			}else{
+				ctx.arc(boss.x,boss.y,size,0,Math.PI*2);
+			}
+			ctx.fill();
+			
+			if(boss.shield>0){
+				const shieldAlpha=boss.shield/boss.maxShield;
+				ctx.strokeStyle=`rgba(0,200,255,${shieldAlpha*0.8})`;
+				ctx.lineWidth=4;
+				ctx.beginPath();
+				for(let i=0;i<6;i++){
+					const angle=i*Math.PI/3+frame/15;
+					const r=size+20;
+					const x=boss.x+Math.cos(angle)*r;
+					const y=boss.y+Math.sin(angle)*r;
+					const nextAngle=(i+1)*Math.PI/3+frame/15;
+					const nextX=boss.x+Math.cos(nextAngle)*r;
+					const nextY=boss.y+Math.sin(nextAngle)*r;
+					ctx.moveTo(x,y);
+					ctx.lineTo(nextX,nextY);
+				}
+				ctx.stroke();
+				ctx.strokeStyle=`rgba(100,220,255,${shieldAlpha*0.4})`;
+				ctx.lineWidth=8;
+				ctx.stroke();
+			}
+		}else{
+			ctx.fillStyle="purple";
+			ctx.beginPath();
+			ctx.arc(boss.x,boss.y,60,0,Math.PI*2);
+			ctx.fill();
+		}
+		const barWidth = 240;
+		const barHeight = 12;
+		const barX = (canvas.width - barWidth) / 2;
+		const barY = 60;
+		const lifeRatio = boss.life / boss.max;
+		const gradient = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
+		gradient.addColorStop(0, "red");
+		gradient.addColorStop(0.5, "orange");
+		gradient.addColorStop(1, "lime");
+		
+		ctx.fillStyle = "rgba(255,0,0,0.3)";
+		ctx.fillRect(barX, barY, barWidth, barHeight);
+		ctx.fillStyle = gradient;
+		ctx.fillRect(barX, barY, barWidth * lifeRatio, barHeight);
+		ctx.strokeStyle = "white";
+		ctx.lineWidth = 2;
+		ctx.strokeRect(barX, barY, barWidth, barHeight);
+		
+		if(boss.type==="shield" && boss.shield > 0){
+			const shieldRatio = boss.shield / boss.maxShield;
+			ctx.fillStyle = "rgba(0,200,255,0.6)";
+			ctx.fillRect(barX, barY + 16, barWidth * shieldRatio, 6);
+			ctx.strokeStyle = "cyan";
+			ctx.lineWidth = 1;
+			ctx.strokeRect(barX, barY + 16, barWidth, 6);
+		}
+	}
+}
+
+function levelComplete(){
+	gameState="pause";
+	localStorage.setItem("coins", coins);
+	document.getElementById("levelMsg").innerHTML =`Bravo ! vous avez passé le niveau ${currentLevel}.<br><span class="Br-msg">Vous disposez de ${coins} 🪙</span>`;
+	const box=document.getElementById("levelShopItems");
+	box.innerHTML="";
+	
+	skins.slice(1).forEach(s=>{
+		const btn=document.createElement("button");
+		const isOwned=ownedSkins.includes(s.id);
+		btn.textContent=isOwned?`${s.name} ✔️`:`${s.name} – ${s.price} 🪙`;
+		btn.onclick=()=>{
+			if(!isOwned && coins>=s.price){
+				coins-=s.price;
+				ownedSkins.push(s.id);
+				localStorage.setItem("skins",JSON.stringify(ownedSkins));
+				localStorage.setItem("coins",coins);
+				activeSkin=s.id;
+				localStorage.setItem("activeSkin",activeSkin);
+				maxPlayerShield = skins[activeSkin].shield;
+				playerShield = maxPlayerShield;
+					playClickTwoTone();
+				levelComplete();
+			}else if(isOwned){
+				activeSkin=s.id;
+				localStorage.setItem("activeSkin",activeSkin);
+				maxPlayerShield = skins[activeSkin].shield;
+				playerShield = maxPlayerShield;
+			}
+		};
+		box.appendChild(btn);
+	});
+	
+	weapons.slice(1).forEach(w=>{
+		const btn=document.createElement("button");
+		const isOwned=ownedWeapons.includes(w.id);
+		btn.textContent=isOwned?`${w.name} ✔️`:`${w.name} – ${w.price} 🪙`;
+		btn.onclick=()=>{
+			if(!isOwned && coins>=w.price){
+				coins-=w.price;
+				ownedWeapons.push(w.id);
+				localStorage.setItem("weapons",JSON.stringify(ownedWeapons));
+				localStorage.setItem("coins",coins);
+				activeWeapon=w.id;
+				localStorage.setItem("activeWeapon",activeWeapon);
+					playClickTwoTone();
+				levelComplete();
+			}else if(isOwned){
+				activeWeapon=w.id;
+				localStorage.setItem("activeWeapon",activeWeapon);
+			}
+		};
+		box.appendChild(btn);
+	});
+	
+	document.getElementById("levelComplete").classList.remove("hidden");
+}
+
+function nextLevel(){
+	document.getElementById("levelComplete").classList.add("hidden");
+	currentLevel++;
+	lives = 3;
+	frame = 0;
+	maxPlayerShield = skins[activeSkin].shield;
+	playerShield = maxPlayerShield;
+	player.x = canvas.width / 2;
+	player.y = canvas.height + 40;
+	respawning = true;
+	invincible = 60;
+	moveX = 0;
+	moveY = 0;
+	shoot = false;
+	keys.left = keys.right = keys.up = keys.down = keys.shoot = false;
+	bullets = [];
+	enemies = [];
+	enemyBullets = [];
+	explosions = [];
+	loots = [];
+	boss = null;
+	updateBackground();
+	showLevelIntro();
+}
+
+function resetFullProgression() {
+	coins = 0;
+	localStorage.setItem("coins", 0);
+	ownedSkins = [0];
+	activeSkin = 0;
+	localStorage.setItem("skins", JSON.stringify(ownedSkins));
+	localStorage.setItem("activeSkin", 0);
+	ownedWeapons = [0];
+	activeWeapon = 0;
+	localStorage.setItem("weapons", JSON.stringify(ownedWeapons));
+	localStorage.setItem("activeWeapon", 0);
+	document.getElementById("coinsUI").textContent = "🪙0";
+}
+
+function endGame(){
+	gameState = "over";
+	// ⚠️ On NE TOUCHE PAS au bestScore ici
+	document.getElementById("currentLevel").textContent = currentLevel;
+	document.getElementById("finalScore").textContent = score;
+	document.getElementById("bestScore").textContent = bestScore;
+
+	playGameOver();
+	resetFullProgression();
+	document.getElementById("gameover").classList.remove("hidden");
+}
+
+function backToMenu(){
+	document.getElementById("gameover").classList.add("hidden");
+	document.getElementById("victory").classList.add("hidden");
+	document.getElementById("MsGbuton").classList.add("hidden");
+	document.getElementById("menu").classList.remove("hidden");
+	document.body.style.background = "#000";
+}
+
+function finalVictory() {
+	gameState = "over";
+	let message = "";
+
+	if (score > bestScore) {
+		bestScore = score;
+		localStorage.setItem("bestScore", bestScore);
+		message = "<div style='text-align:center;'>⭐ NOUVEAU RECORD ⭐</div><br>";
+		playVictoryFinalWithRecordBonus();
+	} else {
+		playVictoryFinal();
+	}
+	message += "<div style='text-align:center;'>Vous avez vaincu le Boss Final Oméga !</div><br>";
+	message += "<div style='text-align:center;'>L'univers est sauvé. Merci d'avoir joué.</div>";
+	document.getElementById("victoryMsg").innerHTML = message;
+	document.getElementById("victoryScore").textContent = score;
+	document.getElementById("MeilleurScore").textContent = bestScore;
+	resetFullProgression();
+	document.getElementById("victory").classList.remove("hidden");
+}
+
+</script>
+</body>
+</html>
