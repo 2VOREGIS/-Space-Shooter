@@ -5,14 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>🚀 Space Shooter</title>
 <style>
-html, body {
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    position: fixed; /* Empêche le rebond élastique sur Firefox/iOS */
-}
+html, body {height: 100%;width: 100%;margin: 0;padding: 0;overflow: hidden;position: fixed; /* Empêche le rebond élastique sur Firefox/iOS */}
 *{margin:0;padding:0;box-sizing:border-box;touch-action:none}
 body{background:#000;color:#fff;font-family:system-ui;overflow:hidden}
 header{position:fixed;top:0;width:100%;height:48px;display:flex;justify-content:space-between;align-items:center;padding:0 12px;background:rgba(0,0,0,.6);z-index:10;font-size:14px}
@@ -20,6 +13,7 @@ canvas{display:block}
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;background:radial-gradient(circle at bottom,#020024,#000);z-index:20}
 .hidden{display:none}
 button{width:260px;padding:14px;font-size:16px;border:none;border-radius:30px;background:#ffcc00;cursor:pointer;margin:8px 0}
+button:disabled{background:#555;color:#888;cursor:not-allowed;opacity:0.5}
 #BoutonInfo {position: fixed;bottom: 10px;width:105px;height:45px;background:#ffcc00;cursor:pointer}
 #BoutonInfo {outline: none;-webkit-tap-highlight-color: transparent;}
 #BoutonInfo:focus,
@@ -27,6 +21,7 @@ button{width:260px;padding:14px;font-size:16px;border:none;border-radius:30px;ba
 #MsGbuton {text-align: center;}
 #levelShopItems{display:flex;flex-direction:column;align-items:center;gap:12px;margin:20px 0;width:100%}
 #levelShopItems button{background:#222;color:#fff;width:260px;margin:0}
+#levelShopItems button:disabled{background:#333;color:#666;cursor:not-allowed}
 #controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:180px;height:180px;z-index:10}
 #base{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at center, rgba(255,255,255,.12), rgba(255,255,255,.04));position:relative;border:2px solid rgba(255,255,255,.2);box-shadow:0 4px 20px rgba(0,0,0,.3), inset 0 2px 10px rgba(255,255,255,.1);}
 #stick{width:60px;height:60px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #ffee00, #ffcc00, #ff9900);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 4px 15px rgba(255,204,0,.5), inset 0 -2px 8px rgba(0,0,0,.3), inset 0 2px 8px rgba(255,255,255,.4);border:2px solid rgba(255,255,255,.3);transition:transform .1s ease-out;}
@@ -40,31 +35,56 @@ button{width:260px;padding:14px;font-size:16px;border:none;border-radius:30px;ba
 #levelIntro{position: fixed;inset: 0;display: flex;justify-content: center;align-items: center;font-size: 48px;font-weight: bold;letter-spacing: 4px;background: rgba(0,0,0,0.85);z-index: 30;opacity: 0;transform: scale(0.8);pointer-events: none;}
 #levelIntro.show{animation: levelIntroAnim 2s ease forwards;}
 @keyframes levelIntroAnim{0%{opacity: 0;transform: scale(0.6);}30%{opacity: 1;transform: scale(1);}70%{opacity: 1;transform: scale(1);}100%{opacity: 0;transform: scale(1.4);}}
+@keyframes blink{0%, 100%{opacity: 1;}50%{opacity: 0.2;}}
+.game-over-title{animation: blink 1s ease-in-out infinite;}
 .no-touch #controls {display: none;}
 #PseudoLogo{font-size:100px}
 </style>
 </head>
 <body>
-<header id="ui"><span id="levelUI">Niveau: 1</span><span id="scoreUI">Score: 0</span><span id="livesUI">❤️❤️❤️</span><span id="coinsUI">🪙 0</span></header>
-<div id="menu" class="screen"><h1 id="PseudoLogo">🚀</h1><br><h1>Space Shooter</h1>character emoji icon<h2></h2><button onclick="requestFullscreenMobile(); startGame();">▶️ Jouer</button><button id="BoutonInfo" onclick="requestFullscreenMobile(); playClickTwoTone(); BoutonInfo();">💬 Info</button></div>
-<div id="levelComplete" class="screen hidden"><h2>🏆- Niveau Terminé -🏆</h2><p id="levelMsg"></p><h3>Boutique disponible</h3><div id="levelShopItems"></div><button onclick="requestFullscreenMobile(); nextLevel(); playClickTwoTone(); playIntroMusic()">➡️ Niveau Suivant</button></div>
-<div id="victory" class="screen hidden">
-<h2>🏆- VICTOIRE -🏆</h2>
+<header id="ui">
+<span id="levelUI">Niveau: 1</span>
+<span id="scoreUI">Score: 0</span>
+<span id="livesUI">❤️❤️❤️</span>
+<span id="coinsUI">🪙 0</span>
+<span id="shieldUI"></span>
+</header>
+<div id="menu" class="screen">
+<h1 id="PseudoLogo">🚀</h1>
+<br><h1>Space Shooter</h1>
+<h2></h2><button onclick="requestFullscreenMobile(); startGame();">▶️ Jouer</button>
+<button id="BoutonInfo" onclick="requestFullscreenMobile(); playClickTwoTone(); BoutonInfo();">💬 Info</button>
+</div>
+<div id="levelComplete" class="screen hidden">
+<h2>🏆- Niveau Terminé -🏆</h2>
+<p id="levelMsg"></p>
+<h3>Boutique disponible - 🪙 <span id="shopCoins">0</span></h3>
+<div id="levelShopItems"></div>
+<button onclick="requestFullscreenMobile(); nextLevel(); playClickTwoTone(); playIntroMusic()">➡️ Niveau Suivant</button>
+</div>
+<div id="victory" class="screen hidden"><h2>🏆- VICTOIRE -🏆</h2>
 <p id="victoryMsg"></p>
 <p>Score Final : <span id="victoryScore"></span></p>
 <p>Meilleur Score : <span id="MeilleurScore"></span></p>
 <button onclick="playClickTwoTone(); backToMenu()">🏠 Menu</button>
 </div>
-<div id="MsGbuton" class="screen hidden">
-<h2>⭐- Space Shooter -⭐</h2><br>
-<p>Space Shooter, le jeu d’arcade<br>en HTML, CSS et JavaScript.<br>Créé par Régis Devaux.<br>
-<br>Facile à distribuer<br>Simple à héberger<br>PC et smartphone<br>Utilisable hors ligne<br><br>💛 Ce jeu est gratuit.<br> son code est libre.<br> Si vous souhaitez soutenir le<br>créateur, un don est toujours apprécié.<br>
-<br>🤝 <a href="https://www.paypal.com/donate/?hosted_button_id=WX5Z3HUSKRNY2" target="_blank" rel="noopener noreferrer">Faire un don</a><br></p>
-<br><br><button onclick="requestFullscreenMobile(); backToMenu(); playClickTwoTone()">🏠 Menu</button>
+<div id="MsGbuton" class="screen hidden"><h2>⭐- Space Shooter -⭐</h2><br>
+<p>Space Shooter, le jeu d'arcade<br>en HTML, CSS et JavaScript.<br>Créé par Régis Devaux.<br>
+<br>Facile à distribuer<br>Simple à héberger<br>PC et smartphone<br>Utilisable hors ligne<br>
+<br>💛 Ce jeu est gratuit.<br> son code est libre.<br> Si vous souhaitez soutenir le<br>créateur, un don est toujours apprécié.<br>
+<br>🤝 <a href="https://www.paypal.com/donate/?hosted_button_id=WX5Z3HUSKRNY2" target="_blank" rel="noopener noreferrer">Faire un don</a><br>
+</p><br><br><button onclick="requestFullscreenMobile(); backToMenu(); playClickTwoTone()">🏠 Menu</button>
 </div>
-
-<div id="gameover" class="screen hidden"><h2>💥- Game Over -💥</h2><p>Niveau : <span id="currentLevel"></span></p><p>Score : <span id="finalScore"></span></p><p>Record : <span id="bestScore"></span></p><button onclick="requestFullscreenMobile(); backToMenu(); playClickTwoTone()">🏠 Menu</button></div>  
-<div id="controls"><div id="base"><div id="stick"></div><div id="fire"></div></div></div>
+<div id="gameover" class="screen hidden">
+<h2 class="game-over-title">💥- Game Over -💥</h2>
+<p>Niveau : <span id="currentLevel"></span></p>
+<p>Score : <span id="finalScore"></span></p>
+<p>Record : <span id="bestScore"></span></p>
+<button onclick="requestFullscreenMobile(); backToMenu(); playClickTwoTone()">🏠 Menu</button>
+</div>
+<div id="controls"><div id="base"><div id="stick"></div>
+<div id="fire"></div>
+</div></div>
 <div id="levelIntro" class="hidden">NIVEAU 1</div>
 <canvas id="game"></canvas>
 <script>
@@ -72,1465 +92,1282 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const menu = document.getElementById("menu");
 let gameState = "menu";
-
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 if (!isTouchDevice) {document.body.classList.add("no-touch");}
+const PLAYER_SVG_PATH = new Path2D("M3415 12768 c-42 -102 -246 -844 -314 -1144 -45 -197 -69 -394 -110 -904 -52 -633 -79 -1109 -91 -1595 -10 -405 -11 -417 -37 -627 l-16 -128 -233 0 -234 0 -4 -22 c-3 -13 -16 -221 -31 -463 l-26 -439 -176 -336 c-519 -990 -576 -1096 -811 -1510 -247 -435 -424 -727 -734 -1209 -300 -467 -509 -814 -571 -951 -28 -61 -29 -70 -23 -150 20 -291 192 -950 246 -950 31 0 606 570 1629 1613 376 383 685 697 687 697 2 0 4 -157 4 -348 l0 -348 -715 -1144 -715 -1143 0 -262 c0 -277 6 -325 42 -325 10 0 117 27 237 59 387 106 955 243 1145 277 70 12 83 12 102 -1 36 -24 70 -92 105 -210 17 -60 33 -112 35 -114 2 -2 112 -9 244 -16 131 -6 241 -13 244 -16 11 -11 42 -268 76 -647 29 -309 56 -457 73 -396 14 49 28 142 41 279 42 421 59 589 69 675 l12 95 240 5 c168 3 247 9 262 18 23 13 32 39 71 192 42 167 48 171 248 126 203 -46 790 -194 1062 -267 123 -33 231 -59 240 -57 34 6 41 64 41 329 l1 256 -715 1143 -715 1143 2 348 3 349 360 -368 c1209 -1236 1917 -1942 1946 -1942 38 0 204 556 255 850 37 215 14 264 -503 1057 -593 912 -835 1331 -1510 2618 l-304 579 -24 391 c-13 214 -27 423 -30 463 l-7 72 -234 0 c-129 0 -234 1 -234 3 -34 256 -43 414 -60 977 -21 716 -111 1843 -171 2160 -57 296 -301 1190 -350 1280 -6 11 -12 6 -24 -22z");
+const ENEMY_SVG_PATH = new Path2D("M549.25 1598.25 C570.12 1590.50 572.38 1560.75 552.88 1549.75 552.88 1549.75 546.25 1546.00 546.25 1546.00 546.25 1546.00 546.25 1451.25 546.25 1451.25 546.25 1451.25 546.25 1356.50 546.25 1356.50 546.25 1356.50 551.50 1355.62 551.50 1355.62 560.38 1354.12 572.62 1350.00 581.75 1345.50 690.50 1291.13 777.50 1020.50 777.50 736.88 777.50 627.38 764.12 506.00 741.12 407.50 741.12 407.50 738.62 397.00 738.62 397.00 738.62 397.00 741.50 394.62 741.50 394.62 816.37 335.00 885.00 300.50 950.62 289.38 963.50 287.25 982.50 285.00 988.25 285.00 988.25 285.00 992.12 285.00 992.12 285.00 992.12 285.00 992.87 304.88 992.87 304.88 996.00 378.25 1010.50 449.75 1031.37 493.62 1040.00 511.75 1038.87 511.88 1048.12 492.00 1089.37 403.88 1097.00 222.50 1065.50 81.25 1058.25 48.62 1043.00 2.62 1039.25 2.12 1035.75 1.75 1020.00 41.75 1012.87 68.88 1009.00 83.62 1007.87 86.38 1005.75 86.88 1004.25 87.12 944.00 95.00 871.87 104.38 799.62 113.75 715.62 124.62 685.00 128.62 685.00 128.62 629.37 135.88 629.37 135.88 629.37 135.88 625.50 132.62 625.50 132.62 622.12 129.62 618.87 128.00 612.00 125.75 610.00 125.00 609.87 124.00 610.62 115.88 613.00 89.00 621.75 51.62 628.12 40.75 632.00 34.12 632.12 30.62 628.37 28.25 622.25 24.25 586.12 19.12 559.00 18.38 559.00 18.38 548.50 18.12 548.50 18.12 548.50 18.12 545.37 10.62 545.37 10.62 543.62 6.50 541.75 2.62 541.25 2.00 540.62 1.38 538.37 4.50 536.12 9.12 533.50 14.25 531.12 17.62 529.50 18.00 528.00 18.38 521.75 18.75 515.62 18.75 501.37 18.75 473.12 21.75 461.25 24.50 455.37 25.75 451.00 27.62 449.12 29.50 445.50 33.12 445.50 34.00 449.25 38.38 455.37 45.75 464.25 85.62 466.87 117.00 466.87 117.00 467.62 127.00 467.62 127.00 467.62 127.00 461.62 131.00 461.62 131.00 458.37 133.12 454.75 135.62 453.75 136.38 452.25 137.50 409.37 132.25 267.50 113.88 166.12 100.75 81.75 89.63 80.12 89.00 77.50 88.25 76.62 86.13 72.37 70.00 66.87 49.00 62.00 34.63 54.12 16.63 47.12 0.75 45.87 -0.62 43.00 5.88 3.25 98.25 -11.13 266.75 9.50 395.63 16.37 438.38 30.50 483.75 43.50 504.88 43.50 504.88 46.00 509.13 46.00 509.13 46.00 509.13 52.00 497.38 52.00 497.38 73.37 454.88 88.62 381.75 92.00 306.38 92.00 306.38 92.87 287.13 92.87 287.13 92.87 287.13 104.87 288.00 104.87 288.00 152.75 291.50 205.75 309.00 256.25 337.88 280.87 351.88 335.50 389.75 340.87 396.38 341.87 397.62 341.62 400.62 339.87 407.50 330.87 444.00 318.87 511.75 313.25 556.88 305.12 621.88 302.00 671.00 302.00 737.50 302.00 832.75 309.87 915.00 327.50 1003.88 355.87 1147.00 402.50 1258.00 458.00 1314.75 481.12 1338.38 501.00 1350.38 525.25 1355.00 525.25 1355.00 532.50 1356.38 532.50 1356.38 532.50 1356.38 532.50 1451.75 532.50 1451.75 532.50 1451.75 532.50 1547.00 532.50 1547.00 532.50 1547.00 528.12 1548.63 528.12 1548.63 518.88 1551.88 511.38 1565.50 512.88 1576.25 515.12 1592.88 533.50 1604.00 549.25 1598.25 Z");
+const BOSS_LEVEL_1_PATH = new Path2D("M6280 5704 c-168 -11 -321 -28 -446 -49 -820 -139 -1473 -541 -1739 -1071 -25 -50 -45 -96 -45 -102 0 -9 -42 -12 -149 -12 l-149 0 -56 -64 -56 -63 0 -534 0 -534 -107 -86 c-60 -47 -135 -104 -168 -126 -132 -89 -418 -213 -490 -213 -94 0 -989 -267 -1500 -448 -497 -175 -779 -321 -1050 -542 -152 -124 -325 -304 -325 -339 0 -8 273 -12 1041 -13 l1040 -3 22 -65 c33 -98 72 -157 161 -245 378 -375 1141 -295 1384 145 17 30 38 81 48 113 l18 57 447 0 448 0 31 -58 c154 -289 595 -530 1155 -630 l100 -18 5 -54 5 -55 530 0 530 0 5 55 5 54 95 17 c571 103 1026 357 1166 652 l18 37 343 -2 344 -3 22 -65 c30 -90 70 -154 141 -229 264 -278 770 -338 1131 -136 151 85 274 226 316 366 l21 69 1114 0 c770 0 1114 3 1114 10 0 6 -15 34 -34 63 -115 179 -421 417 -746 581 -319 161 -868 360 -1625 587 -265 80 -341 99 -392 99 -53 0 -79 7 -168 46 -165 72 -347 191 -497 324 l-48 42 0 535 0 534 -32 32 c-18 18 -48 49 -66 70 l-32 37 -169 0 -168 0 -46 96 c-144 297 -415 564 -772 762 -337 185 -789 318 -1230 361 -115 12 -414 20 -495 15z");
+const BOSS_LEVEL_2_PATH = new Path2D("M 96.00,17.72 C 83.06,21.97 71.92,25.74 64.20,38.00 61.90,41.66 61.16,42.62 61.02,47.01 60.80,53.70 62.00,56.10 64.96,62.00 66.25,64.58 68.75,68.03 67.76,71.00 66.97,73.36 62.85,77.15 61.00,79.00 61.00,79.00 46.38,93.99 46.38,93.99 43.18,97.87 41.65,102.23 36.00,102.49 34.56,102.46 33.58,102.14 32.05,102.49 23.96,104.76 30.95,113.21 31.19,115.04 31.42,116.78 30.59,118.45 29.92,120.00 29.92,120.00 23.15,135.00 23.15,135.00 18.16,147.98 14.02,167.10 14.00,181.00 14.00,181.00 15.10,207.00 15.10,207.00 15.10,207.00 16.67,215.00 16.67,215.00 16.77,219.48 13.06,222.80 15.06,226.83 16.27,229.27 19.34,230.73 21.74,235.00 21.74,235.00 25.67,244.00 25.67,244.00 25.67,244.00 34.93,262.00 34.93,262.00 36.74,264.80 45.15,276.50 45.14,279.00 45.12,283.82 36.86,287.20 36.11,296.00 34.53,314.33 59.36,336.38 77.00,336.98 84.25,337.23 87.72,335.87 92.92,330.67 95.71,327.87 99.06,321.65 103.09,321.73 103.09,321.73 119.00,326.72 119.00,326.72 127.48,329.32 140.16,331.89 149.00,332.00 160.81,332.13 173.34,332.71 185.00,330.74 185.00,330.74 217.99,321.39 217.99,321.39 223.05,320.48 225.03,325.39 229.67,323.05 233.35,321.19 232.58,317.43 233.59,315.12 234.57,312.89 236.11,312.06 238.02,310.73 250.17,302.28 261.83,292.92 271.58,281.68 271.58,281.68 283.98,265.02 283.98,265.02 288.89,258.93 292.52,262.35 294.96,257.85 297.19,253.75 292.85,251.51 294.03,246.00 294.03,246.00 299.96,230.00 299.96,230.00 299.96,230.00 303.55,216.00 303.55,216.00 304.68,211.07 304.67,201.85 306.57,198.02 311.60,187.86 332.31,189.46 338.23,177.00 339.78,173.75 339.95,170.52 340.00,167.00 340.25,145.59 333.19,128.41 321.48,110.75 316.17,102.76 308.44,94.34 298.00,95.10 291.94,95.54 284.14,100.82 280.91,100.14 277.72,99.47 274.94,95.51 273.01,93.09 269.15,88.23 265.05,84.45 260.63,80.15 250.43,70.25 241.54,63.93 229.00,57.32 229.00,57.32 217.00,51.33 217.00,51.33 210.69,47.72 212.84,44.15 208.86,42.62 205.12,41.18 202.37,44.51 198.00,44.57 198.00,44.57 173.00,41.00 173.00,41.00 173.00,41.00 138.00,41.83 138.00,41.83 127.18,42.66 129.27,32.48 121.39,23.13 115.61,16.27 104.11,15.93 96.00,17.72 Z M 102.00,28.30 C 114.36,27.18 114.73,33.25 106.49,40.70 100.61,46.01 88.92,51.27 81.00,51.86 73.49,52.41 70.28,47.38 77.29,40.09 83.86,33.26 92.89,29.99 102.00,28.30 Z M 179.00,82.43 C 183.67,82.36 182.99,83.05 187.00,83.75 187.00,83.75 194.00,84.68 194.00,84.68 200.29,86.11 209.26,91.17 213.24,96.30 214.70,98.18 216.87,102.02 217.65,104.28 224.51,123.94 201.98,134.35 186.00,133.99 171.59,133.66 149.79,124.56 149.04,108.00 148.90,104.99 149.05,101.81 150.23,99.00 151.31,96.40 153.12,94.08 155.09,92.09 162.75,84.41 169.24,84.60 179.00,82.43 Z M 329.00,170.00 C 320.97,169.36 317.92,162.73 313.96,156.43 302.66,138.47 301.00,128.63 301.00,108.00 307.86,109.10 312.19,116.38 315.48,122.01 322.23,133.56 328.97,150.55 329.00,164.00 329.00,164.00 329.00,170.00 329.00,170.00 Z M 101.00,152.30 C 119.00,150.50 135.53,152.64 148.96,166.04 155.58,172.64 157.08,176.24 159.17,185.00 159.83,187.77 160.87,190.09 160.90,193.00 160.94,196.07 160.00,198.13 159.33,201.00 158.62,204.07 158.58,205.87 157.32,209.00 153.61,218.27 144.02,226.82 135.00,230.80 123.50,235.87 118.10,235.14 106.00,235.00 84.70,234.75 63.04,217.12 63.23,195.00 62.99,192.06 62.83,187.76 63.23,185.00 67.43,167.50 84.15,155.58 101.00,152.30 Z M 218.00,212.37 C 228.22,211.07 240.43,215.61 244.18,226.00 245.24,228.92 245.02,232.88 245.00,236.00 244.91,253.16 229.13,264.26 213.00,264.00 195.08,263.71 185.38,245.72 193.14,230.01 198.16,219.84 207.55,215.04 218.00,212.37 Z M 47.00,297.00 C 58.10,292.76 70.85,302.64 77.24,311.18 79.33,313.96 83.11,320.13 81.40,323.69 79.26,328.13 70.97,323.89 68.00,322.41 57.51,317.18 49.65,308.57 47.00,297.00 Z");
+const BOSS_LEVEL_3_PATH = new Path2D("M 96.00,17.72 C 83.06,21.97 71.92,25.74 64.20,38.00 61.90,41.66 61.16,42.62 61.02,47.01 60.80,53.70 62.00,56.10 64.96,62.00 66.25,64.58 68.75,68.03 67.76,71.00 66.97,73.36 62.85,77.15 61.00,79.00 61.00,79.00 46.38,93.99 46.38,93.99 43.18,97.87 41.65,102.23 36.00,102.49 34.56,102.46 33.58,102.14 32.05,102.49 23.96,104.76 30.95,113.21 31.19,115.04 31.42,116.78 30.59,118.45 29.92,120.00 29.92,120.00 23.15,135.00 23.15,135.00 18.16,147.98 14.02,167.10 14.00,181.00 14.00,181.00 15.10,207.00 15.10,207.00 15.10,207.00 16.67,215.00 16.67,215.00 16.77,219.48 13.06,222.80 15.06,226.83 16.27,229.27 19.34,230.73 21.74,235.00 21.74,235.00 25.67,244.00 25.67,244.00 25.67,244.00 34.93,262.00 34.93,262.00 36.74,264.80 45.15,276.50 45.14,279.00 45.12,283.82 36.86,287.20 36.11,296.00 34.53,314.33 59.36,336.38 77.00,336.98 84.25,337.23 87.72,335.87 92.92,330.67 95.71,327.87 99.06,321.65 103.09,321.73 103.09,321.73 119.00,326.72 119.00,326.72 127.48,329.32 140.16,331.89 149.00,332.00 160.81,332.13 173.34,332.71 185.00,330.74 185.00,330.74 217.99,321.39 217.99,321.39 223.05,320.48 225.03,325.39 229.67,323.05 233.35,321.19 232.58,317.43 233.59,315.12 234.57,312.89 236.11,312.06 238.02,310.73 250.17,302.28 261.83,292.92 271.58,281.68 271.58,281.68 283.98,265.02 283.98,265.02 288.89,258.93 292.52,262.35 294.96,257.85 297.19,253.75 292.85,251.51 294.03,246.00 294.03,246.00 299.96,230.00 299.96,230.00 299.96,230.00 303.55,216.00 303.55,216.00 304.68,211.07 304.67,201.85 306.57,198.02 311.60,187.86 332.31,189.46 338.23,177.00 339.78,173.75 339.95,170.52 340.00,167.00 340.25,145.59 333.19,128.41 321.48,110.75 316.17,102.76 308.44,94.34 298.00,95.10 291.94,95.54 284.14,100.82 280.91,100.14 277.72,99.47 274.94,95.51 273.01,93.09 269.15,88.23 265.05,84.45 260.63,80.15 250.43,70.25 241.54,63.93 229.00,57.32 229.00,57.32 217.00,51.33 217.00,51.33 210.69,47.72 212.84,44.15 208.86,42.62 205.12,41.18 202.37,44.51 198.00,44.57 198.00,44.57 173.00,41.00 173.00,41.00 173.00,41.00 138.00,41.83 138.00,41.83 127.18,42.66 129.27,32.48 121.39,23.13 115.61,16.27 104.11,15.93 96.00,17.72 Z M 102.00,28.30 C 114.36,27.18 114.73,33.25 106.49,40.70 100.61,46.01 88.92,51.27 81.00,51.86 73.49,52.41 70.28,47.38 77.29,40.09 83.86,33.26 92.89,29.99 102.00,28.30 Z M 179.00,82.43 C 183.67,82.36 182.99,83.05 187.00,83.75 187.00,83.75 194.00,84.68 194.00,84.68 200.29,86.11 209.26,91.17 213.24,96.30 214.70,98.18 216.87,102.02 217.65,104.28 224.51,123.94 201.98,134.35 186.00,133.99 171.59,133.66 149.79,124.56 149.04,108.00 148.90,104.99 149.05,101.81 150.23,99.00 151.31,96.40 153.12,94.08 155.09,92.09 162.75,84.41 169.24,84.60 179.00,82.43 Z M 329.00,170.00 C 320.97,169.36 317.92,162.73 313.96,156.43 302.66,138.47 301.00,128.63 301.00,108.00 307.86,109.10 312.19,116.38 315.48,122.01 322.23,133.56 328.97,150.55 329.00,164.00 329.00,164.00 329.00,170.00 329.00,170.00 Z M 101.00,152.30 C 119.00,150.50 135.53,152.64 148.96,166.04 155.58,172.64 157.08,176.24 159.17,185.00 159.83,187.77 160.87,190.09 160.90,193.00 160.94,196.07 160.00,198.13 159.33,201.00 158.62,204.07 158.58,205.87 157.32,209.00 153.61,218.27 144.02,226.82 135.00,230.80 123.50,235.87 118.10,235.14 106.00,235.00 84.70,234.75 63.04,217.12 63.23,195.00 62.99,192.06 62.83,187.76 63.23,185.00 67.43,167.50 84.15,155.58 101.00,152.30 Z M 218.00,212.37 C 228.22,211.07 240.43,215.61 244.18,226.00 245.24,228.92 245.02,232.88 245.00,236.00 244.91,253.16 229.13,264.26 213.00,264.00 195.08,263.71 185.38,245.72 193.14,230.01 198.16,219.84 207.55,215.04 218.00,212.37 Z M 47.00,297.00 C 58.10,292.76 70.85,302.64 77.24,311.18 79.33,313.96 83.11,320.13 81.40,323.69 79.26,328.13 70.97,323.89 68.00,322.41 57.51,317.18 49.65,308.57 47.00,297.00 Z");
+const BOSS_LEVEL_4_PATH = new Path2D("M 96.00,17.72 C 83.06,21.97 71.92,25.74 64.20,38.00 61.90,41.66 61.16,42.62 61.02,47.01 60.80,53.70 62.00,56.10 64.96,62.00 66.25,64.58 68.75,68.03 67.76,71.00 66.97,73.36 62.85,77.15 61.00,79.00 61.00,79.00 46.38,93.99 46.38,93.99 43.18,97.87 41.65,102.23 36.00,102.49 34.56,102.46 33.58,102.14 32.05,102.49 23.96,104.76 30.95,113.21 31.19,115.04 31.42,116.78 30.59,118.45 29.92,120.00 29.92,120.00 23.15,135.00 23.15,135.00 18.16,147.98 14.02,167.10 14.00,181.00 14.00,181.00 15.10,207.00 15.10,207.00 15.10,207.00 16.67,215.00 16.67,215.00 16.77,219.48 13.06,222.80 15.06,226.83 16.27,229.27 19.34,230.73 21.74,235.00 21.74,235.00 25.67,244.00 25.67,244.00 25.67,244.00 34.93,262.00 34.93,262.00 36.74,264.80 45.15,276.50 45.14,279.00 45.12,283.82 36.86,287.20 36.11,296.00 34.53,314.33 59.36,336.38 77.00,336.98 84.25,337.23 87.72,335.87 92.92,330.67 95.71,327.87 99.06,321.65 103.09,321.73 103.09,321.73 119.00,326.72 119.00,326.72 127.48,329.32 140.16,331.89 149.00,332.00 160.81,332.13 173.34,332.71 185.00,330.74 185.00,330.74 217.99,321.39 217.99,321.39 223.05,320.48 225.03,325.39 229.67,323.05 233.35,321.19 232.58,317.43 233.59,315.12 234.57,312.89 236.11,312.06 238.02,310.73 250.17,302.28 261.83,292.92 271.58,281.68 271.58,281.68 283.98,265.02 283.98,265.02 288.89,258.93 292.52,262.35 294.96,257.85 297.19,253.75 292.85,251.51 294.03,246.00 294.03,246.00 299.96,230.00 299.96,230.00 299.96,230.00 303.55,216.00 303.55,216.00 304.68,211.07 304.67,201.85 306.57,198.02 311.60,187.86 332.31,189.46 338.23,177.00 339.78,173.75 339.95,170.52 340.00,167.00 340.25,145.59 333.19,128.41 321.48,110.75 316.17,102.76 308.44,94.34 298.00,95.10 291.94,95.54 284.14,100.82 280.91,100.14 277.72,99.47 274.94,95.51 273.01,93.09 269.15,88.23 265.05,84.45 260.63,80.15 250.43,70.25 241.54,63.93 229.00,57.32 229.00,57.32 217.00,51.33 217.00,51.33 210.69,47.72 212.84,44.15 208.86,42.62 205.12,41.18 202.37,44.51 198.00,44.57 198.00,44.57 173.00,41.00 173.00,41.00 173.00,41.00 138.00,41.83 138.00,41.83 127.18,42.66 129.27,32.48 121.39,23.13 115.61,16.27 104.11,15.93 96.00,17.72 Z M 102.00,28.30 C 114.36,27.18 114.73,33.25 106.49,40.70 100.61,46.01 88.92,51.27 81.00,51.86 73.49,52.41 70.28,47.38 77.29,40.09 83.86,33.26 92.89,29.99 102.00,28.30 Z M 179.00,82.43 C 183.67,82.36 182.99,83.05 187.00,83.75 187.00,83.75 194.00,84.68 194.00,84.68 200.29,86.11 209.26,91.17 213.24,96.30 214.70,98.18 216.87,102.02 217.65,104.28 224.51,123.94 201.98,134.35 186.00,133.99 171.59,133.66 149.79,124.56 149.04,108.00 148.90,104.99 149.05,101.81 150.23,99.00 151.31,96.40 153.12,94.08 155.09,92.09 162.75,84.41 169.24,84.60 179.00,82.43 Z M 329.00,170.00 C 320.97,169.36 317.92,162.73 313.96,156.43 302.66,138.47 301.00,128.63 301.00,108.00 307.86,109.10 312.19,116.38 315.48,122.01 322.23,133.56 328.97,150.55 329.00,164.00 329.00,164.00 329.00,170.00 329.00,170.00 Z M 101.00,152.30 C 119.00,150.50 135.53,152.64 148.96,166.04 155.58,172.64 157.08,176.24 159.17,185.00 159.83,187.77 160.87,190.09 160.90,193.00 160.94,196.07 160.00,198.13 159.33,201.00 158.62,204.07 158.58,205.87 157.32,209.00 153.61,218.27 144.02,226.82 135.00,230.80 123.50,235.87 118.10,235.14 106.00,235.00 84.70,234.75 63.04,217.12 63.23,195.00 62.99,192.06 62.83,187.76 63.23,185.00 67.43,167.50 84.15,155.58 101.00,152.30 Z M 218.00,212.37 C 228.22,211.07 240.43,215.61 244.18,226.00 245.24,228.92 245.02,232.88 245.00,236.00 244.91,253.16 229.13,264.26 213.00,264.00 195.08,263.71 185.38,245.72 193.14,230.01 198.16,219.84 207.55,215.04 218.00,212.37 Z M 47.00,297.00 C 58.10,292.76 70.85,302.64 77.24,311.18 79.33,313.96 83.11,320.13 81.40,323.69 79.26,328.13 70.97,323.89 68.00,322.41 57.51,317.18 49.65,308.57 47.00,297.00 Z");
+const BOSS_LEVEL_5_PATH = new Path2D("M 96.00,17.72 C 83.06,21.97 71.92,25.74 64.20,38.00 61.90,41.66 61.16,42.62 61.02,47.01 60.80,53.70 62.00,56.10 64.96,62.00 66.25,64.58 68.75,68.03 67.76,71.00 66.97,73.36 62.85,77.15 61.00,79.00 61.00,79.00 46.38,93.99 46.38,93.99 43.18,97.87 41.65,102.23 36.00,102.49 34.56,102.46 33.58,102.14 32.05,102.49 23.96,104.76 30.95,113.21 31.19,115.04 31.42,116.78 30.59,118.45 29.92,120.00 29.92,120.00 23.15,135.00 23.15,135.00 18.16,147.98 14.02,167.10 14.00,181.00 14.00,181.00 15.10,207.00 15.10,207.00 15.10,207.00 16.67,215.00 16.67,215.00 16.77,219.48 13.06,222.80 15.06,226.83 16.27,229.27 19.34,230.73 21.74,235.00 21.74,235.00 25.67,244.00 25.67,244.00 25.67,244.00 34.93,262.00 34.93,262.00 36.74,264.80 45.15,276.50 45.14,279.00 45.12,283.82 36.86,287.20 36.11,296.00 34.53,314.33 59.36,336.38 77.00,336.98 84.25,337.23 87.72,335.87 92.92,330.67 95.71,327.87 99.06,321.65 103.09,321.73 103.09,321.73 119.00,326.72 119.00,326.72 127.48,329.32 140.16,331.89 149.00,332.00 160.81,332.13 173.34,332.71 185.00,330.74 185.00,330.74 217.99,321.39 217.99,321.39 223.05,320.48 225.03,325.39 229.67,323.05 233.35,321.19 232.58,317.43 233.59,315.12 234.57,312.89 236.11,312.06 238.02,310.73 250.17,302.28 261.83,292.92 271.58,281.68 271.58,281.68 283.98,265.02 283.98,265.02 288.89,258.93 292.52,262.35 294.96,257.85 297.19,253.75 292.85,251.51 294.03,246.00 294.03,246.00 299.96,230.00 299.96,230.00 299.96,230.00 303.55,216.00 303.55,216.00 304.68,211.07 304.67,201.85 306.57,198.02 311.60,187.86 332.31,189.46 338.23,177.00 339.78,173.75 339.95,170.52 340.00,167.00 340.25,145.59 333.19,128.41 321.48,110.75 316.17,102.76 308.44,94.34 298.00,95.10 291.94,95.54 284.14,100.82 280.91,100.14 277.72,99.47 274.94,95.51 273.01,93.09 269.15,88.23 265.05,84.45 260.63,80.15 250.43,70.25 241.54,63.93 229.00,57.32 229.00,57.32 217.00,51.33 217.00,51.33 210.69,47.72 212.84,44.15 208.86,42.62 205.12,41.18 202.37,44.51 198.00,44.57 198.00,44.57 173.00,41.00 173.00,41.00 173.00,41.00 138.00,41.83 138.00,41.83 127.18,42.66 129.27,32.48 121.39,23.13 115.61,16.27 104.11,15.93 96.00,17.72 Z M 102.00,28.30 C 114.36,27.18 114.73,33.25 106.49,40.70 100.61,46.01 88.92,51.27 81.00,51.86 73.49,52.41 70.28,47.38 77.29,40.09 83.86,33.26 92.89,29.99 102.00,28.30 Z M 179.00,82.43 C 183.67,82.36 182.99,83.05 187.00,83.75 187.00,83.75 194.00,84.68 194.00,84.68 200.29,86.11 209.26,91.17 213.24,96.30 214.70,98.18 216.87,102.02 217.65,104.28 224.51,123.94 201.98,134.35 186.00,133.99 171.59,133.66 149.79,124.56 149.04,108.00 148.90,104.99 149.05,101.81 150.23,99.00 151.31,96.40 153.12,94.08 155.09,92.09 162.75,84.41 169.24,84.60 179.00,82.43 Z M 329.00,170.00 C 320.97,169.36 317.92,162.73 313.96,156.43 302.66,138.47 301.00,128.63 301.00,108.00 307.86,109.10 312.19,116.38 315.48,122.01 322.23,133.56 328.97,150.55 329.00,164.00 329.00,164.00 329.00,170.00 329.00,170.00 Z M 101.00,152.30 C 119.00,150.50 135.53,152.64 148.96,166.04 155.58,172.64 157.08,176.24 159.17,185.00 159.83,187.77 160.87,190.09 160.90,193.00 160.94,196.07 160.00,198.13 159.33,201.00 158.62,204.07 158.58,205.87 157.32,209.00 153.61,218.27 144.02,226.82 135.00,230.80 123.50,235.87 118.10,235.14 106.00,235.00 84.70,234.75 63.04,217.12 63.23,195.00 62.99,192.06 62.83,187.76 63.23,185.00 67.43,167.50 84.15,155.58 101.00,152.30 Z M 218.00,212.37 C 228.22,211.07 240.43,215.61 244.18,226.00 245.24,228.92 245.02,232.88 245.00,236.00 244.91,253.16 229.13,264.26 213.00,264.00 195.08,263.71 185.38,245.72 193.14,230.01 198.16,219.84 207.55,215.04 218.00,212.37 Z M 47.00,297.00 C 58.10,292.76 70.85,302.64 77.24,311.18 79.33,313.96 83.11,320.13 81.40,323.69 79.26,328.13 70.97,323.89 68.00,322.41 57.51,317.18 49.65,308.57 47.00,297.00 Z");
+const BOSS_LEVEL_6_PATH = new Path2D("M 112.26,64.59 C 112.26,64.59 114.13,69.27 114.13,69.27 98.96,60.01 86.22,56.90 69.23,64.08 65.52,65.65 62.32,68.08 58.94,70.20 58.94,70.20 60.81,64.59 60.81,64.59 29.27,84.62 30.77,138.22 65.48,155.83 71.61,158.94 78.23,160.92 85.13,161.00 115.92,161.35 134.81,139.16 136.50,109.52 137.34,94.67 127.00,69.61 112.26,64.59 Z M 58.94,71.14 C 53.91,82.80 50.37,88.73 50.52,102.03 50.58,107.53 51.60,112.05 54.08,117.01 60.25,129.35 73.01,138.24 87.00,138.22 107.04,138.20 124.56,119.15 123.40,99.22 122.61,85.72 116.74,78.44 114.13,69.27 127.31,75.51 134.07,96.67 133.76,110.45 133.14,137.89 111.07,160.05 83.26,158.11 52.44,155.95 34.19,121.62 43.06,93.60 45.78,84.99 50.41,75.17 58.94,71.14 Z M 82.32,84.24 C 80.91,90.53 79.03,97.57 81.53,103.90 82.47,106.32 84.78,110.04 87.90,109.20 93.31,107.74 93.91,97.15 93.38,92.67 93.38,92.67 91.68,84.24 91.68,84.24 94.84,84.98 97.21,85.76 100.08,87.35 108.24,91.86 110.01,100.75 102.73,107.15 98.00,111.31 91.23,112.56 85.13,112.29 69.03,111.59 60.31,97.54 72.05,88.51 75.14,86.14 78.60,85.10 82.32,84.24 Z M 173.06,102.03 C 174.31,97.34 170.61,92.50 165.58,93.52 159.14,94.82 155.80,103.84 151.02,98.99 150.14,98.10 149.43,96.70 149.20,95.48 147.98,89.13 156.09,88.78 161.23,81.44 167.86,71.96 163.40,59.01 157.23,50.55 145.18,34.02 121.47,26.99 107.99,45.88 105.49,49.39 104.63,51.01 103.84,55.23 103.84,55.23 100.10,54.29 100.10,54.29 101.30,50.15 102.35,45.93 104.45,42.12 110.13,31.75 120.39,30.77 130.97,30.04 135.03,29.76 138.28,30.36 142.19,28.48 149.83,24.83 151.42,17.20 154.74,13.14 156.38,11.16 158.94,8.74 161.75,9.73 168.77,12.22 167.91,27.97 166.52,33.70 175.83,25.46 176.91,2.45 160.90,0.20 154.87,-0.65 148.48,2.85 144.91,7.57 142.75,10.44 141.42,14.07 138.36,16.16 135.60,18.04 132.28,17.78 129.10,17.78 122.89,17.79 118.37,17.42 112.26,19.25 98.36,23.43 89.20,35.06 88.87,49.61 88.87,49.61 85.13,49.61 85.13,49.61 84.14,37.75 77.72,25.87 66.42,21.03 58.30,17.55 52.43,17.83 43.97,17.78 40.96,17.77 38.25,17.92 35.63,16.16 30.24,12.53 27.34,0.54 15.90,0.12 11.99,-0.02 7.81,1.31 4.99,4.06 -3.14,12.00 0.86,25.10 5.61,33.70 7.40,29.05 3.10,14.24 11.27,10.36 14.35,8.90 17.16,10.85 19.06,13.21 22.07,16.94 23.15,23.18 29.04,27.01 39.64,33.93 55.47,25.37 67.04,39.32 68.85,41.51 69.75,43.25 70.75,45.87 72.09,49.40 72.63,51.48 72.97,55.23 66.23,49.64 66.39,41.71 56.13,36.99 35.33,27.43 10.73,48.10 9.44,69.27 9.10,74.82 10.96,80.89 15.15,84.69 18.51,87.76 26.16,90.68 24.27,96.39 23.08,99.99 20.28,101.77 16.84,99.65 13.54,97.63 7.13,88.62 1.73,96.52 0.70,98.01 0.44,99.40 0.00,101.09 1.52,100.17 3.77,98.50 5.60,98.58 10.84,98.83 11.27,107.66 19.65,108.48 27.87,109.28 32.80,102.94 34.17,95.48 35.20,89.89 33.74,85.60 29.83,81.52 26.92,78.47 22.10,75.89 22.03,71.14 21.88,61.10 37.12,45.15 47.71,48.35 53.91,50.22 58.13,57.23 60.81,62.72 60.81,62.72 75.77,56.87 75.77,56.87 89.64,53.15 99.87,56.36 112.26,62.72 116.22,56.10 120.75,46.81 130.03,47.95 139.07,49.06 150.76,61.06 151.33,70.20 151.77,77.08 146.16,78.08 142.59,82.46 139.78,85.89 139.14,90.23 139.47,94.54 139.98,101.04 144.69,107.81 151.55,108.48 154.55,108.77 157.34,108.33 159.67,106.31 164.69,101.94 166.18,93.78 173.06,102.03 Z");
+const ASTEROID_PATH = new Path2D("M 150 100 Q 120 80, 100 70 Q 80 60, 60 80 Q 40 100, 60 120 Q 80 140, 100 130 Q 120 120, 150 100 M 150 100 L 200 90 L 210 100 L 200 110 Z");
 
-// ====== SYSTÈME DE VIBRATION ======
-function vibrate(pattern) {
-	if (navigator.vibrate) {
-		navigator.vibrate(pattern);
-	}
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+let score = 0;
+let bestScore = parseInt(localStorage.getItem("bestScore")) || 0;
+let currentLevel = 1;
+let lives = 3;
+let coins = parseInt(localStorage.getItem("coins")) || 0;
+let playerX = canvas.width / 2;
+let playerY = canvas.height - 150;
+let playerSpeed = 5;
+let bullets = [];
+let enemies = [];
+let particles = [];
+let boss = null;
+let bossBullets = [];
+let asteroids = [];
+let powerUps = [];
+let flameCounter = 0; 
+let keys = {};
+let joystickActive = false;
+let joystickAngle = 0;
+let joystickPower = 0;
+let isFiring = false;
+let invulnerable = false;
+let playerShield = 0;
+let invulnerableUntil = 0;
+let autoFire = false;
+let lastShotTime = 0;
+let fireRate = 500;
+let bulletSpeed = 8;
+let bulletDamage = 1;
+let bulletSize = 1;
+
+const weaponsCatalog = [
+    {id: 0, name: "Canon Simple", rate: 100, speed: 10, damage: 1, size: 1, price: 0},
+    {id: 1, name: "Canon Rapide", rate: 150, speed: 10, damage: 1, size: 1, price: 50},
+    {id: 2, name: "Double Canon", rate: 200, speed: 9, damage: 2, size: 1.2, price: 100},
+    {id: 3, name: "Triple Canon", rate: 175, speed: 9, damage: 3, size: 1.3, price: 200},
+    {id: 4, name: "Mega Canon", rate: 125, speed: 12, damage: 5, size: 1.5, price: 400}
+];
+
+let ownedWeapons = JSON.parse(localStorage.getItem("weapons")) || [0];
+let activeWeapon = parseInt(localStorage.getItem("activeWeapon")) || 0;
+
+function applyWeaponStats() {
+    const weapon = weaponsCatalog[activeWeapon];
+    fireRate = weapon.rate;
+    bulletSpeed = weapon.speed;
+    bulletDamage = weapon.damage;
+    bulletSize = weapon.size;
+}
+applyWeaponStats();
+
+document.addEventListener("keydown", (e) => {
+    keys[e.key] = true;
+    if (e.key === " " && gameState === "playing") {
+        e.preventDefault();
+        isFiring = true;
+    }
+});
+
+document.addEventListener("keyup", (e) => {
+    keys[e.key] = false;
+    if (e.key === " ") {
+        isFiring = false;
+    }
+});
+
+const base = document.getElementById("base");
+const stick = document.getElementById("stick");
+const fireBtn = document.getElementById("fire");
+
+let touchIdentifier = null;
+let fireIdentifier = null;
+
+base.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    if (touchIdentifier === null) {
+        const touch = e.changedTouches[0];
+        touchIdentifier = touch.identifier;
+        updateJoystick(touch);
+    }
+}, {passive: false});
+
+base.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchIdentifier) {
+            updateJoystick(e.changedTouches[i]);
+            break;
+        }
+    }
+}, {passive: false});
+
+base.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchIdentifier) {
+            joystickActive = false;
+            stick.style.transform = "translate(-50%, -50%)";
+            touchIdentifier = null;
+            break;
+        }
+    }
+}, {passive: false});
+
+fireBtn.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    fireIdentifier = e.changedTouches[0].identifier;
+    isFiring = true;
+}, {passive: false});
+
+fireBtn.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    if (e.changedTouches[0].identifier === fireIdentifier) {
+        isFiring = false;
+        fireIdentifier = null;
+    }
+}, {passive: false});
+
+function updateJoystick(touch) {
+    const rect = base.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const deltaX = touch.clientX - centerX;
+    const deltaY = touch.clientY - centerY;
+    const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 60);
+    joystickAngle = Math.atan2(deltaY, deltaX);
+    joystickPower = distance / 60;
+    const stickX = Math.cos(joystickAngle) * distance;
+    const stickY = Math.sin(joystickAngle) * distance;
+    stick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
+    joystickActive = true;
 }
 
-// ====== SYSTÈME AUDIO ======
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+function updatePlayer() {
+    if (gameState !== "playing") return;
 
-function playSound(type) {
-	const oscillator = audioContext.createOscillator();
-	const gainNode = audioContext.createGain();
-	oscillator.connect(gainNode);
-	gainNode.connect(audioContext.destination);
-	
-	switch(type) {
-		case 'shoot':
-			oscillator.frequency.value = 440;
-			oscillator.type = 'square';
-			gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.1);
-			break;
-			
-		case 'explosion':
-			oscillator.frequency.value = 100;
-			oscillator.type = 'sawtooth';
-			gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.3);
-			vibrate(50);
-			break;
-			
-		case 'hit':
-			oscillator.frequency.value = 200;
-			oscillator.type = 'triangle';
-			gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.15);
-			vibrate(30);
-			break;
-			
-		case 'damage':
-			oscillator.frequency.value = 150;
-			oscillator.type = 'sawtooth';
-			gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.2);
-			vibrate([50, 30, 50]);
-			break;
-			
-		case 'loot':
-			oscillator.frequency.value = 800;
-			oscillator.type = 'sine';
-			gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.2);
-			vibrate(20);
-			break;
-			
-		case 'bosshit':
-			oscillator.frequency.value = 80;
-			oscillator.type = 'sawtooth';
-			gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.25);
-			vibrate(40);
-			break;
-			
-		case 'bossdefeat':
-			oscillator.frequency.value = 50;
-			oscillator.type = 'sawtooth';
-			gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.8);
-			vibrate([100, 50, 100, 50, 200]);
-			break;
-	}
+    if (joystickActive) {
+        playerX += Math.cos(joystickAngle) * playerSpeed * joystickPower;
+        playerY += Math.sin(joystickAngle) * playerSpeed * joystickPower;
+    } else {
+        if (keys.ArrowLeft || keys.q || keys.Q) playerX -= playerSpeed;
+        if (keys.ArrowRight || keys.d || keys.D) playerX += playerSpeed;
+        if (keys.ArrowUp || keys.z || keys.Z) playerY -= playerSpeed;
+        if (keys.ArrowDown || keys.s || keys.S) playerY += playerSpeed;
+    }
+
+    playerX = Math.max(30, Math.min(canvas.width - 30, playerX));
+    playerY = Math.max(30, Math.min(canvas.height - 30, playerY));
+
+    if ((isFiring || autoFire) && Date.now() - lastShotTime > fireRate && gameState === "playing") {
+        shoot();
+        lastShotTime = Date.now();
+    }
 }
 
-function playIntroMusic() {
-  const now = audioContext.currentTime;
-  const duration = 4.5;
-  
-  const melody = [
-    { freq: 392.00, time: 0.0, duration: 0.3 },
-    { freq: 523.25, time: 0.3, duration: 0.3 },
-    { freq: 659.25, time: 0.6, duration: 0.3 },
-    { freq: 783.99, time: 0.9, duration: 0.6 },
-    { freq: 659.25, time: 1.6, duration: 0.2 },
-    { freq: 783.99, time: 1.8, duration: 0.2 },
-    { freq: 1046.5, time: 2.0, duration: 0.8 },
-    { freq: 987.77, time: 2.9, duration: 0.3 },
-    { freq: 880.00, time: 3.2, duration: 0.3 },
-    { freq: 783.99, time: 3.5, duration: 0.4 },
-    { freq: 1046.5, time: 3.9, duration: 0.6 }
-  ];
-  
-  melody.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-    gain.gain.setValueAtTime(0, now + note.time);
-    gain.gain.linearRampToValueAtTime(0.15, now + note.time + 0.05);
-    gain.gain.linearRampToValueAtTime(0.12, now + note.time + 0.1);
-    gain.gain.setValueAtTime(0.12, now + note.time + note.duration - 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
+function shoot() {
+    const weapon = weaponsCatalog[activeWeapon];
+    if (weapon.id === 0 || weapon.id === 1) {
+        bullets.push({x: playerX, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+		playShoot();
+		vibrate(20); 
+    } else if (weapon.id === 2) {
+        bullets.push({x: playerX - 10, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        bullets.push({x: playerX + 10, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        playShoot();
+        vibrate(25); 
+    } else if (weapon.id === 3) {
+        bullets.push({x: playerX - 15, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        bullets.push({x: playerX, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        bullets.push({x: playerX + 15, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        playShoot();
+        vibrate(30); 
+    } else if (weapon.id === 4) {
+        bullets.push({x: playerX - 20, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        bullets.push({x: playerX - 10, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        bullets.push({x: playerX, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        bullets.push({x: playerX + 10, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        bullets.push({x: playerX + 20, y: playerY - 20, vx: 0, vy: -bulletSpeed, damage: bulletDamage, size: bulletSize});
+        playShoot();
+        vibrate(40); 
+    }
+}
+
+function spawnEnemies() {
+    if (gameState !== "playing") return;
     
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + note.time);
-    osc.stop(now + note.time + note.duration);
-  });
-  
-  const beats = [0, 0.6, 1.2, 1.8, 2.4, 3.0, 3.6, 4.2];
-  beats.forEach(time => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(80, now + time);
-    osc.frequency.exponentialRampToValueAtTime(40, now + time + 0.1);
-    gain.gain.setValueAtTime(0.25, now + time);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + time + 0.15);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + time);
-    osc.stop(now + time + 0.15);
-  });
-  
-  const bass = [
-    { freq: 130.81, time: 0.0, duration: 1.2 },
-    { freq: 164.81, time: 1.2, duration: 1.2 },
-    { freq: 196.00, time: 2.4, duration: 0.9 },
-    { freq: 130.81, time: 3.3, duration: 1.2 }
-  ];
-  
-  bass.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-    gain.gain.setValueAtTime(0, now + note.time);
-    gain.gain.linearRampToValueAtTime(0.08, now + note.time + 0.05);
-    gain.gain.setValueAtTime(0.08, now + note.time + note.duration - 0.2);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + note.time);
-    osc.stop(now + note.time + note.duration);
-  });
-  
-  const pads = [
-    { freq: 261.63, time: 0.0 },
-    { freq: 329.63, time: 0.0 },
-    { freq: 392.00, time: 0.0 }
-  ];
-  pads.forEach(pad => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(pad.freq, now + pad.time);
-    gain.gain.setValueAtTime(0, now + pad.time);
-    gain.gain.linearRampToValueAtTime(0.04, now + pad.time + 1.0);
-    gain.gain.setValueAtTime(0.04, now + 3.5);
-    gain.gain.linearRampToValueAtTime(0.01, now + duration);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + pad.time);
-    osc.stop(now + duration);
-  });
-  
-  const finalChord = [
-    { freq: 523.25, time: 3.9 },
-    { freq: 659.25, time: 3.9 },
-    { freq: 1046.5, time: 3.9 }
-  ];
-  
-  finalChord.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-    gain.gain.setValueAtTime(0.15, now + note.time);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + 0.6);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + note.time);
-    osc.stop(now + note.time + 0.6);
-  });
-}
-
-function playClickTwoTone() {
-  const now = audioContext.currentTime;
-
-  const notes = [
-    { freq: 600, time: 0.0 },
-    { freq: 900, time: 0.04 }
-  ];
-
-  notes.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    osc.type = "square";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-
-    gain.gain.setValueAtTime(0.12, now + note.time);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + note.time + 0.04);
-
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-
-    osc.start(now + note.time);
-    osc.stop(now + note.time + 0.04);
-  });
-}
-
-function playGameOver() {
-  const now = audioContext.currentTime;
-  const duration = 3.5;
-  
-  const melody = [
-    { freq: 523.25, time: 0.0, duration: 0.4 },
-    { freq: 493.88, time: 0.3, duration: 0.4 },
-    { freq: 440.00, time: 0.6, duration: 0.4 },
-    { freq: 392.00, time: 0.9, duration: 0.4 },
-    { freq: 349.23, time: 1.2, duration: 0.5 },
-    { freq: 329.63, time: 1.7, duration: 0.5 },
-    { freq: 293.66, time: 2.2, duration: 0.6 },
-    { freq: 261.63, time: 2.8, duration: 0.7 }
-  ];
-  
-  melody.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-    gain.gain.setValueAtTime(0, now + note.time);
-    gain.gain.linearRampToValueAtTime(0.12, now + note.time + 0.08);
-    gain.gain.linearRampToValueAtTime(0.09, now + note.time + 0.15);
-    gain.gain.setValueAtTime(0.09, now + note.time + note.duration - 0.2);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + note.time);
-    osc.stop(now + note.time + note.duration);
-  });
-  
-  const crashTime = 0.0;
-  const crash = audioContext.createOscillator();
-  const crashGain = audioContext.createGain();
-  crash.type = "square";
-  crash.frequency.setValueAtTime(180, now + crashTime);
-  crash.frequency.exponentialRampToValueAtTime(60, now + crashTime + 0.3);
-  crashGain.gain.setValueAtTime(0.3, now + crashTime);
-  crashGain.gain.exponentialRampToValueAtTime(0.01, now + crashTime + 0.3);
-  crash.connect(crashGain);
-  crashGain.connect(audioContext.destination);
-  crash.start(now + crashTime);
-  crash.stop(now + crashTime + 0.3);
-  
-  const bass = [
-    { freq: 130.81, time: 0.0, duration: 1.2 },
-    { freq: 116.54, time: 1.2, duration: 1.2 },
-    { freq: 110.00, time: 2.4, duration: 1.1 }
-  ];
-  
-  bass.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-    gain.gain.setValueAtTime(0, now + note.time);
-    gain.gain.linearRampToValueAtTime(0.15, now + note.time + 0.1);
-    gain.gain.setValueAtTime(0.15, now + note.time + note.duration - 0.3);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + note.time);
-    osc.stop(now + note.time + note.duration);
-  });
-  
-  const glissando = audioContext.createOscillator();
-  const glissandoGain = audioContext.createGain();
-  glissando.type = "triangle";
-  glissando.frequency.setValueAtTime(1200, now + 0.05);
-  glissando.frequency.exponentialRampToValueAtTime(200, now + 0.6);
-  glissandoGain.gain.setValueAtTime(0.08, now + 0.05);
-  glissandoGain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-  glissando.connect(glissandoGain);
-  glissandoGain.connect(audioContext.destination);
-  glissando.start(now + 0.05);
-  glissando.stop(now + 0.6);
-  
-  const pads = [
-    { freq: 261.63, time: 0.5 },
-    { freq: 311.13, time: 0.5 },
-    { freq: 349.23, time: 0.5 }
-  ];
-  
-  pads.forEach(pad => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(pad.freq, now + pad.time);
-    gain.gain.setValueAtTime(0, now + pad.time);
-    gain.gain.linearRampToValueAtTime(0.03, now + pad.time + 0.8);
-    gain.gain.setValueAtTime(0.03, now + 2.5);
-    gain.gain.linearRampToValueAtTime(0.01, now + duration);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + pad.time);
-    osc.stop(now + duration);
-  });
-  
-  const finalNotes = [
-    { freq: 130.81, time: 2.8 },
-    { freq: 164.81, time: 2.8 },
-    { freq: 196.00, time: 2.8 }
-  ];
-  
-  finalNotes.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-    gain.gain.setValueAtTime(0.1, now + note.time);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + 0.7);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + note.time);
-    osc.stop(now + note.time + 0.7);
-  });
-  
-  const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.2, audioContext.sampleRate);
-  const noiseData = noiseBuffer.getChannelData(0);
-  for (let i = 0; i < noiseData.length; i++) {
-    noiseData[i] = Math.random() * 2 - 1;
-  }
-  
-  const noise = audioContext.createBufferSource();
-  const noiseGain = audioContext.createGain();
-  const noiseFilter = audioContext.createBiquadFilter();
-  noise.buffer = noiseBuffer;
-  noiseFilter.type = "lowpass";
-  noiseFilter.frequency.value = 800;
-  noiseGain.gain.setValueAtTime(0.15, now + 0.05);
-  noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-  noise.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-  noiseGain.connect(audioContext.destination);
-  noise.start(now + 0.05);
-  noise.stop(now + 0.25);
-}
-
-function playVictoryFinal() {
-  const now = audioContext.currentTime;
-
-  const melody = [
-    { freq: 392.00, time: 0.0, duration: 0.5 },
-    { freq: 523.25, time: 0.5, duration: 0.5 },
-    { freq: 659.25, time: 1.0, duration: 0.6 },
-    { freq: 783.99, time: 1.6, duration: 1.2 }
-  ];
-
-  melody.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-    gain.gain.setValueAtTime(0, now + note.time);
-    gain.gain.linearRampToValueAtTime(0.15, now + note.time + 0.1);
-    gain.gain.setValueAtTime(0.15, now + note.time + note.duration - 0.2);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + note.time);
-    osc.stop(now + note.time + note.duration);
-  });
-
-  const finalChord = [
-    { freq: 261.63 },
-    { freq: 329.63 },
-    { freq: 392.00 },
-    { freq: 523.25 }
-  ];
-
-  finalChord.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(note.freq, now + 1.8);
-    gain.gain.setValueAtTime(0.12, now + 1.8);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 4.0);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + 1.8);
-    osc.stop(now + 4.0);
-  });
-
-  const bass = audioContext.createOscillator();
-  const bassGain = audioContext.createGain();
-  bass.type = "sine";
-  bass.frequency.setValueAtTime(130.81, now);
-  bassGain.gain.setValueAtTime(0.18, now);
-  bassGain.gain.exponentialRampToValueAtTime(0.01, now + 4);
-  bass.connect(bassGain);
-  bassGain.connect(audioContext.destination);
-  bass.start(now);
-  bass.stop(now + 4);
-}
-
-function playVictoryFinalWithRecordBonus() {
-  const now = audioContext.currentTime;
-  
-  const melody = [
-    { freq: 392.00, time: 0.0, duration: 0.5 },
-    { freq: 523.25, time: 0.5, duration: 0.5 },
-    { freq: 659.25, time: 1.0, duration: 0.6 },
-    { freq: 783.99, time: 1.6, duration: 1.2 }
-  ];
-
-  melody.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(note.freq, now + note.time);
-    gain.gain.setValueAtTime(0, now + note.time);
-    gain.gain.linearRampToValueAtTime(0.15, now + note.time + 0.1);
-    gain.gain.setValueAtTime(0.15, now + note.time + note.duration - 0.2);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + note.duration);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + note.time);
-    osc.stop(now + note.time + note.duration);
-  });
-
-  const finalChord = [261.63, 329.63, 392.00, 523.25];
-  finalChord.forEach(freq => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(freq, now + 1.8);
-    gain.gain.setValueAtTime(0.12, now + 1.8);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 4.0);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(now + 1.8);
-    osc.stop(now + 4.0);
-  });
-
-  const bass = audioContext.createOscillator();
-  const bassGain = audioContext.createGain();
-  bass.type = "sine";
-  bass.frequency.setValueAtTime(130.81, now);
-  bassGain.gain.setValueAtTime(0.18, now);
-  bassGain.gain.exponentialRampToValueAtTime(0.01, now + 4);
-  bass.connect(bassGain);
-  bassGain.connect(audioContext.destination);
-  bass.start(now);
-  bass.stop(now + 4);
-  
-  const bonusStart = now + 4.1;
-  const bonusMelody = [
-    { freq: 783.99, time: 0.0, duration: 0.15 },
-    { freq: 987.77, time: 0.15, duration: 0.15 },
-    { freq: 1174.66, time: 0.30, duration: 0.2 },
-    { freq: 1567.98, time: 0.55, duration: 0.4 }
-  ];
-
-  bonusMelody.forEach(note => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(note.freq, bonusStart + note.time);
-    gain.gain.setValueAtTime(0, bonusStart + note.time);
-    gain.gain.linearRampToValueAtTime(0.14, bonusStart + note.time + 0.04);
-    gain.gain.exponentialRampToValueAtTime(0.01, bonusStart + note.time + note.duration);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(bonusStart + note.time);
-    osc.stop(bonusStart + note.time + note.duration);
-  });
-  
-  const sparkleChord = [1046.50, 1318.51, 1567.98];
-  sparkleChord.forEach(freq => {
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(freq, bonusStart + 0.6);
-    gain.gain.setValueAtTime(0.1, bonusStart + 0.6);
-    gain.gain.exponentialRampToValueAtTime(0.01, bonusStart + 1.6);
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start(bonusStart + 0.6);
-    osc.stop(bonusStart + 1.6);
-  });
-}
-
-function requestFullscreenMobile() {
-    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    if (!isTouchDevice) return;
-
-    const el = document.documentElement;
-    const requestMethod = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-
-    if (requestMethod) {
-        requestMethod.call(el).then(() => {
-            // Une fois en plein écran, on attend un peu et on recalcule
-            setTimeout(resize, 300);
-        }).catch(err => {
-            console.log("Erreur plein écran:", err);
+    const enemyHealthMultiplier = 1 + (currentLevel - 1) * 0.3;
+    const enemySpeedMultiplier = 1 + (currentLevel - 1) * 0.15;
+    
+    if (enemies.length < 3 + currentLevel && Math.random() < 0.02 + currentLevel * 0.005) {
+        enemies.push({
+            x: Math.random() * (canvas.width - 60) + 30,
+            y: -30,
+            vx: (Math.random() - 0.5) * 2 * enemySpeedMultiplier,
+            vy: 2 * enemySpeedMultiplier,
+            health: Math.floor(3 * enemyHealthMultiplier),
+            maxHealth: Math.floor(3 * enemyHealthMultiplier),
+            lastShot: 0,
+            shootInterval: 2000 - (currentLevel * 100)
         });
     }
 }
 
+function spawnBoss() {
+    if (boss) return;
+    
+    const bossConfigs = {
+        1: {health: 100, speed: 1, shootInterval: 1500, bulletSpeed: 3, scale: 0.015, glowSize: 0},
+        2: {health: 150, speed: 1.2, shootInterval: 1300, bulletSpeed: 3.5, scale: 0.20, glowSize: 10},
+        3: {health: 220, speed: 1.4, shootInterval: 1100, bulletSpeed: 4, scale: 0.24, glowSize: 15},
+        4: {health: 320, speed: 1.6, shootInterval: 900, bulletSpeed: 4.5, scale: 0.28, glowSize: 20},
+        5: {health: 450, speed: 1.8, shootInterval: 700, bulletSpeed: 5, scale: 0.32, glowSize: 25},
+        6: {health: 600, speed: 2, shootInterval: 500, bulletSpeed: 5.5, scale: 0.40, glowSize: 35}
+    };
+    
+    const config = bossConfigs[Math.min(currentLevel, 6)] || bossConfigs[6];
+    
+    boss = {
+        x: canvas.width / 2,
+        y: -100,
+        vx: config.speed,
+        vy: 0.5,
+        health: config.health,
+        maxHealth: config.health,
+        lastShot: 0,
+        shootInterval: config.shootInterval,
+        bulletSpeed: config.bulletSpeed,
+        scale: config.scale,
+        glowSize: config.glowSize,
+        glowPulse: 0,
+        level: Math.min(currentLevel, 6)
+    };
+}
 
-let resizeTimeout;
-function resize() {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        // Priorité au visualViewport pour Firefox Mobile
-        const vw = window.visualViewport;
-        const width = vw ? vw.width : window.innerWidth;
-        const height = vw ? vw.height : window.innerHeight;
-
-        canvas.width = width;
-        canvas.height = height;
-
-        // Repositionner le joueur s'il sort de l'écran après resize
-        if (player) {
-            if (player.x > canvas.width) player.x = canvas.width / 2;
-            if (player.y > canvas.height) player.y = canvas.height - 50;
+function updateEnemies() {
+    enemies = enemies.filter(enemy => {
+        enemy.x += enemy.vx;
+        enemy.y += enemy.vy;
+        
+        if (enemy.x < 20 || enemy.x > canvas.width - 20) enemy.vx *= -1;
+        
+        if (Date.now() - enemy.lastShot > enemy.shootInterval) {
+            const angle = Math.atan2(playerY - enemy.y, playerX - enemy.x);
+            bossBullets.push({
+                x: enemy.x,
+                y: enemy.y + 20,
+                vx: Math.cos(angle) * 3,
+                vy: Math.sin(angle) * 3
+            });
+            enemy.lastShot = Date.now();
+            playEnemyShoot();
         }
-    }, 150); // Petit délai de 150ms pour laisser Firefox se stabiliser
+        
+        return enemy.y < canvas.height + 30 && enemy.health > 0;
+    });
 }
 
-window.addEventListener('resize', resize);
-if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', resize);
+function updateBoss() {
+    if (!boss) return;
+    
+    boss.x += boss.vx;
+    boss.y += boss.vy;
+    
+    if (boss.y >= 100) boss.vy = 0;
+    
+    if (boss.x < 80 || boss.x > canvas.width - 80) boss.vx *= -1;
+    
+    boss.glowPulse += 0.05;
+    
+    if (Date.now() - boss.lastShot > boss.shootInterval) {
+
+        const bulletCount = Math.min(boss.level + 2, 8);
+        for (let i = 0; i < bulletCount; i++) {
+            const angle = (Math.PI * 2 * i) / bulletCount + boss.glowPulse;
+            bossBullets.push({
+                x: boss.x,
+                y: boss.y + 50,
+                vx: Math.cos(angle) * boss.bulletSpeed,
+                vy: Math.sin(angle) * boss.bulletSpeed
+            });
+        }
+        
+        // Tir direct vers le joueur
+        const angleToPlayer = Math.atan2(playerY - boss.y, playerX - boss.x);
+        bossBullets.push({
+            x: boss.x,
+            y: boss.y + 50,
+            vx: Math.cos(angleToPlayer) * (boss.bulletSpeed + 1),
+            vy: Math.sin(angleToPlayer) * (boss.bulletSpeed + 1)
+        });
+        
+        boss.lastShot = Date.now();
+        playBossShoot();
+    }
 }
 
-// Utilise un délai pour laisser le temps au navigateur de finir sa transition de barre d'adresse
-window.addEventListener("resize", () => {
-    setTimeout(resize, 100);
-});
-
-// Ajout spécifique pour Firefox Mobile
-if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', resize);
-}
-resize();
-window.addEventListener("resize",resize);
-
-let bestScore=+localStorage.getItem("bestScore")||0;
-let coins=+localStorage.getItem("coins")||0;
-let ownedSkins=JSON.parse(localStorage.getItem("skins")||"[0]");
-let activeSkin=+localStorage.getItem("activeSkin")||0;
-let ownedWeapons=JSON.parse(localStorage.getItem("weapons")||"[0]");
-let activeWeapon=+localStorage.getItem("activeWeapon")||0;
-let loots = [];
-let skullWeaponActive = false;
-let skullWeaponTimer = 0;
-
-const skins=[
- {id:0,name:"🛰 vaisseau - T01",price:0,color:"lime",shield:0},
- {id:1,name:"🛡️ Bouclier Bronze",price:200,color:"cyan",shield:100},
- {id:2,name:"🛡️ Bouclier Or",price:500,color:"gold",shield:250}
-];
-
-const weapons=[
- {id:0,name:"🗡 Tir Simple",price:0,type:"simple",damage:5},
- {id:1,name:"⚔ Tir Double",price:500,type:"double",damage:8},
- {id:2,name:"⚒ Tir Mortel",price:150,type:"skull",damage:15}
-];
-
-const backgrounds={
-  1:"#001a33",
-  2:"#1a0033",
-  3:"#331a00",
-  4:"#1a0000"
-};
-
-function createStars() {
-	const numberOfStars = 250;
-	for (let i = 0; i < numberOfStars; i++) {
-	const star = document.createElement('div');
-	star.className = 'star';
-	const size = Math.random() * 2.5 + 0.5;
-	star.style.width = size + 'px';
-	star.style.height = size + 'px';
-	star.style.left = Math.random() * 100 + 'vw';
-	star.style.top = Math.random() * 100 + 'vh';
-	star.style.animationDuration = (Math.random() * 3 + 1) + 's';
-	document.body.appendChild(star);
-	}
+function updateBullets() {
+    bullets = bullets.filter(b => {
+        b.x += b.vx;
+        b.y += b.vy;
+        return b.y > -10;
+    });
+    
+    bossBullets = bossBullets.filter(b => {
+        b.x += b.vx;
+        b.y += b.vy;
+        return b.y < canvas.height + 10 && b.x > -10 && b.x < canvas.width + 10;
+    });
 }
 
-function createShootingStar() {
-	const star = document.createElement('div');
-	star.className = 'shooting-star';
-	star.style.left = Math.random() * window.innerWidth + 'px';
-	star.style.top = Math.random() * window.innerHeight * 0.6 + 'px';
-	document.body.appendChild(star);
-	setTimeout(() => star.remove(), 1200);
+function spawnAsteroids() {
+    if (Math.random() < 0.01 && asteroids.length < 3) {
+        asteroids.push({
+            x: Math.random() * canvas.width,
+            y: -30,
+            vx: (Math.random() - 0.5) * 2,
+            vy: 2 + Math.random(),
+            rotation: 0,
+            rotationSpeed: (Math.random() - 0.5) * 0.1
+        });
+    }
 }
 
-setInterval(createShootingStar, 800);
-setInterval(() => {
-	for (let i = 0; i < 3; i++) {
-		setTimeout(createShootingStar, i * 150);
-	}
-}, 5000);
-
-createStars();
-
-let playerShield, maxPlayerShield;
-let player,bullets,enemies,enemyBullets,boss,explosions;
-let score,lives,frame,invincible,respawning,currentLevel;
-
-const keys = {
-	left: false, right: false, up: false, down: false, shoot: false
-};
-
-window.addEventListener("keydown", e => {
-	if (gameState !== "play") return;
-	switch (e.code) {
-		case "ArrowLeft": case "KeyQ": keys.left = true; break;
-		case "ArrowRight": case "KeyD": keys.right = true; break;
-		case "ArrowUp": case "KeyZ": keys.up = true; break;
-		case "ArrowDown": case "KeyS": keys.down = true; break;
-		case "Space": keys.shoot = true; break;
-	}
-});
-
-window.addEventListener("keyup", e => {
-	switch (e.code) {
-		case "ArrowLeft": case "KeyQ": keys.left = false; break;
-		case "ArrowRight": case "KeyD": keys.right = false; break;
-		case "ArrowUp": case "KeyZ": keys.up = false; break;
-		case "ArrowDown": case "KeyS": keys.down = false; break;
-		case "Space": keys.shoot = false; break;
-	}
-});
-
-let moveX=0,moveY=0,shoot=false;
-const base=document.getElementById("base");
-const stick=document.getElementById("stick");
-const fire=document.getElementById("fire");
-
-base.ontouchmove=e=>{
-	const r=base.getBoundingClientRect();
-	moveX=Math.max(-1,Math.min(1,(e.touches[0].clientX-r.left-r.width/2)/(r.width/2)));
-	moveY=Math.max(-1,Math.min(1,(e.touches[0].clientY-r.top-r.height/2)/(r.height/2)));
-	stick.style.transform=`translate(${moveX*40-50}%,${moveY*40-50}%)`;
-};
-
-base.ontouchend=()=>{moveX=moveY=0;stick.style.transform="translate(-50%,-50%)"};
-fire.ontouchstart=()=>shoot=true;
-fire.ontouchend=()=>shoot=false;
-
-function BoutonInfo(){		
-	 gameState = "over";
-	// ⚠️ On affiche le message info ici
-	document.getElementById("MsGbuton").classList.remove("hidden");
-
+function updateAsteroids() {
+    asteroids = asteroids.filter(a => {
+        a.x += a.vx;
+        a.y += a.vy;
+        a.rotation += a.rotationSpeed;
+        return a.y < canvas.height + 30;
+    });
 }
 
-function createExplosion(x,y,size){
-	explosions.push({x,y,size,frame:0,maxFrame:20});
-	playSound('explosion');
+function spawnPowerUps() {
+    if (Math.random() < 0.005 && powerUps.length < 2) {
+        const types = ["health", "autofire", "coin", "shield"];
+        powerUps.push({
+            x: Math.random() * (canvas.width - 40) + 20,
+            y: -20,
+            vy: 2,
+            type: types[Math.floor(Math.random() * types.length)]
+        });
+    }
 }
 
-function spawnLoot(type, x, y) {
-	loots.push({
-		x: x || Math.random() * (canvas.width - 40) + 20,
-		y: y || -30,
-		type,
-		speed: 2
-	});
+function updatePowerUps() {
+    powerUps = powerUps.filter(p => {
+        p.y += p.vy;
+        return p.y < canvas.height + 20;
+    });
 }
 
-function showLevelIntro(){
-	const intro = document.getElementById("levelIntro");
-	intro.textContent = `NIVEAU ${currentLevel}`;
-	intro.classList.remove("hidden");
-	intro.classList.add("show");
-	gameState = "pause";
-	setTimeout(()=>{
-		intro.classList.remove("show");
-		intro.classList.add("hidden");
-		gameState = "play";
-		loop();
-	}, 2000);
+function checkCollisions() {
+
+    if (lives <= 0) return;
+    
+    if (invulnerable && Date.now() > invulnerableUntil) {
+        invulnerable = false;
+    }
+    
+    bullets.forEach((bullet, bIndex) => {
+        enemies.forEach((enemy, eIndex) => {
+            const dist = Math.hypot(bullet.x - enemy.x, bullet.y - enemy.y);
+            if (dist < 25) {
+                enemy.health -= bullet.damage;
+                bullets.splice(bIndex, 1);
+                createParticles(enemy.x, enemy.y, "#ff6600");
+                playHit();
+                if (enemy.health <= 0) {
+                    score += 10 + (currentLevel * 5);
+                    coins += (currentLevel === 1) ? 5 : (2 + currentLevel);
+                    updateUI();
+                    createExplosion(enemy.x, enemy.y);
+                    playExplosion();
+
+                    if (Math.random() < 0.2) {
+                        const shieldValue = currentLevel === 1 ? (Math.random() < 0.7 ? 1 : 2) : currentLevel === 2 ? (Math.random() < 0.5 ? 2 : 3) : currentLevel === 3 ? (Math.random() < 0.5 ? 3 : 5) : (Math.random() < 0.5 ? 5 : 7);
+                        powerUps.push({x: enemy.x, y: enemy.y, vy: 2, type: "shield", shieldValue: shieldValue});
+                    }
+                    enemies.splice(eIndex, 1);
+                }
+            }
+        });
+        
+        if (boss) {
+            const dist = Math.hypot(bullet.x - boss.x, bullet.y - boss.y);
+            if (dist < 40) {
+                boss.health -= bullet.damage;
+                bullets.splice(bIndex, 1);
+                createParticles(boss.x, boss.y, "#ff0000");
+                playHit();
+                if (boss.health <= 0) {
+                    score += 100 + (currentLevel * 50);
+
+                    const bossCoins = currentLevel === 1 ? 100 : currentLevel === 2 ? 200 : currentLevel === 3 ? 400 : 800;
+                    coins += bossCoins;
+
+                    const bossShieldValue = currentLevel === 1 ? 3 : currentLevel === 2 ? 5 : currentLevel === 3 ? 7 : 10;
+                    powerUps.push({x: boss.x, y: boss.y, vy: 2, type: "shield", shieldValue: bossShieldValue});
+                    updateUI();
+                    createExplosion(boss.x, boss.y);
+                    playBossExplosion();
+                    
+                    startVictoryCinematic();
+                }
+            }
+        }
+    });
+    
+    if (!invulnerable) {
+        bossBullets.forEach((bullet, bIndex) => {
+            const dist = Math.hypot(bullet.x - playerX, bullet.y - playerY);
+            if (dist < 25) {
+                if (playerShield > 0) {
+                    playerShield--;
+                    vibrate(50); 
+                } else {
+                    lives--;
+                    vibrate(100); 
+                }
+                updateUI();
+                bossBullets.splice(bIndex, 1);
+                createParticles(playerX, playerY, "#ffcc00");
+                playPlayerHit();
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    invulnerable = true;
+                    invulnerableUntil = Date.now() + 1000;
+                }
+            }
+        });
+        
+        enemies.forEach(enemy => {
+            const dist = Math.hypot(enemy.x - playerX, enemy.y - playerY);
+            if (dist < 35) {
+                if (playerShield > 0) {
+                    playerShield--;
+                    vibrate(50); 
+                } else {
+                    lives--;
+                    vibrate(100); 
+                }
+                updateUI();
+                enemy.health = 0;
+                createParticles(playerX, playerY, "#ffcc00");
+                playPlayerHit();
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    invulnerable = true;
+                    invulnerableUntil = Date.now() + 1000;
+                }
+            }
+        });
+        
+        asteroids.forEach((asteroid, aIndex) => {
+            const dist = Math.hypot(asteroid.x - playerX, asteroid.y - playerY);
+            if (dist < 40) {
+                lives--;
+                vibrate(150); 
+                updateUI();
+                asteroids.splice(aIndex, 1);
+                createParticles(playerX, playerY, "#ffcc00");
+                playPlayerHit();
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    invulnerable = true;
+                    invulnerableUntil = Date.now() + 1000;
+                }
+            }
+        });
+    }
+    
+    powerUps.forEach((powerUp, pIndex) => {
+        const dist = Math.hypot(powerUp.x - playerX, powerUp.y - playerY);
+        if (dist < 30) {
+            if (powerUp.type === "health" && lives < 3) {
+                lives++;
+            } else if (powerUp.type === "autofire") {
+                autoFire = true;
+            } else if (powerUp.type === "coin") {
+                coins += 5;
+            } else if (powerUp.type === "shield") {
+                playerShield += powerUp.shieldValue || 2;
+            }
+            powerUps.splice(pIndex, 1);
+            updateUI();
+            playPowerUp();
+        }
+    });
 }
 
-function reset(){
-	player = { x: canvas.width / 2, y: canvas.height + 40 };
-	bullets = [];
-	enemies = [];
-	enemyBullets = [];
-	explosions = [];
-	score = 0;
-	lives = 3;
-	frame = 0;
-	boss = null;
-	invincible = 0;
-	respawning = true;
-	currentLevel = 1;
-	
-	maxPlayerShield = skins[activeSkin].shield;
-	playerShield = maxPlayerShield;
-	
-	loots = [];
-	skullWeaponActive = false;
-	skullWeaponTimer = 0;
+function createParticles(x, y, color) {
+    for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2 * i) / 8;
+        particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * 3,
+            vy: Math.sin(angle) * 3,
+            life: 30,
+            color: color
+        });
+    }
 }
 
-function startGame(){
- audioContext.resume();
- playIntroMusic();
- gameState = "play";
- document.getElementById("menu").classList.add("hidden");
- document.getElementById("gameover").classList.add("hidden");
- document.getElementById("victory").classList.add("hidden");
- reset();
- updateBackground();
-	showLevelIntro();
+function createExplosion(x, y) {
+    for (let i = 0; i < 20; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 2;
+        particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 40,
+            color: `hsl(${Math.random() * 60 + 10}, 100%, 50%)`
+        });
+    }
 }
 
-function updateBackground(){
-	document.body.style.background=backgrounds[currentLevel]||"#000";
+function updateParticles() {
+    particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        return p.life > 0;
+    });
 }
 
-function loop(){
-	if(gameState!=="play")return;
-	update();
-	draw();
-	requestAnimationFrame(loop);
+function drawPlayer() {
+
+    if (playerShield > 0) {
+        ctx.save();
+        
+        const pulseTime = Date.now() / 1000;
+        const pulse = Math.sin(pulseTime * 3) * 0.15 + 0.85;
+        const shieldOpacity = 0.6 + (playerShield / 10) * 0.3;
+        
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = `rgba(0, 200, 255, ${shieldOpacity * pulse})`;
+        
+        const gradient1 = ctx.createRadialGradient(playerX, playerY, 35, playerX, playerY, 50);
+        gradient1.addColorStop(0, `rgba(0, 200, 255, ${0.2 * shieldOpacity * pulse})`);
+        gradient1.addColorStop(0.7, `rgba(0, 150, 255, ${0.1 * shieldOpacity * pulse})`);
+        gradient1.addColorStop(1, 'rgba(0, 100, 255, 0)');
+        ctx.fillStyle = gradient1;
+        ctx.beginPath();
+        ctx.arc(playerX, playerY, 50, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = `rgba(0, 230, 255, ${shieldOpacity * pulse})`;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(playerX, playerY, 42, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.shadowBlur = 15;
+        ctx.strokeStyle = `rgba(100, 255, 255, ${(shieldOpacity + 0.3) * pulse})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(playerX, playerY, 40, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = `rgba(200, 255, 255, ${(shieldOpacity + 0.5) * pulse})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(playerX, playerY, 38, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        for (let i = 0; i < 8; i++) {
+            const angle = (pulseTime * 2 + i * Math.PI / 4) % (Math.PI * 2);
+            const sparkleX = playerX + Math.cos(angle) * 42;
+            const sparkleY = playerY + Math.sin(angle) * 42;
+            const sparkleSize = (Math.sin(pulseTime * 5 + i) + 1) * 1.5;
+            
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = `rgba(150, 255, 255, ${0.8 * pulse})`;
+            ctx.beginPath();
+            ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
+    
+    if (invulnerable) {
+        const blinkSpeed = 150; 
+        if (Math.floor(Date.now() / blinkSpeed) % 2 === 0) {
+            return; // 
+        }
+    }
+    
+    ctx.save();
+    ctx.translate(playerX, playerY);
+    
+    const isMovingUp = keys["ArrowUp"] || keys["z"] || keys["Z"] || (joystickActive && Math.sin(joystickAngle) < -0.3);
+    
+    if (isMovingUp) {
+        flameCounter++;
+        
+        const flameHeight = 20 + Math.random() * 12;
+        const flameWidth = 10 + Math.sin(flameCounter * 0.3) * 3;
+        
+        const grad = ctx.createRadialGradient(0, 25, 0, 0, 25, flameHeight);
+        grad.addColorStop(0, "#fff");        
+        grad.addColorStop(0.3, "#ffff00");   
+        grad.addColorStop(0.6, "#ff8800");   
+        grad.addColorStop(0.85, "#ff3300");  
+        grad.addColorStop(1, "rgba(255, 0, 0, 0)"); 
+        
+        ctx.fillStyle = grad;
+        
+        ctx.beginPath();
+        ctx.moveTo(-flameWidth, 22);
+        ctx.quadraticCurveTo(-flameWidth/2, 22 + flameHeight/2, 0, 22 + flameHeight);
+        ctx.quadraticCurveTo(flameWidth/2, 22 + flameHeight/2, flameWidth, 22);
+        ctx.closePath();
+        ctx.fill();
+        
+        const flameHeight2 = 15 + Math.random() * 8;
+        const flameWidth2 = 7 + Math.sin(flameCounter * 0.4) * 2;
+        
+        const grad2 = ctx.createRadialGradient(0, 24, 0, 0, 24, flameHeight2);
+        grad2.addColorStop(0, "#ffffaa");
+        grad2.addColorStop(0.4, "#ffaa00");
+        grad2.addColorStop(1, "rgba(255, 100, 0, 0)");
+        
+        ctx.fillStyle = grad2;
+        ctx.beginPath();
+        ctx.moveTo(-flameWidth2, 24);
+        ctx.quadraticCurveTo(-flameWidth2/2, 24 + flameHeight2/2, 0, 24 + flameHeight2);
+        ctx.quadraticCurveTo(flameWidth2/2, 24 + flameHeight2/2, flameWidth2, 24);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Halo lumineux
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "#ff6600";
+    }
+    
+    ctx.scale(0.0045, -0.0045); 
+    ctx.translate(-3200, -6400);
+    ctx.fillStyle = "#70868F";
+    ctx.shadowBlur = 0; 
+    ctx.fill(PLAYER_SVG_PATH);
+    ctx.restore();
 }
 
-function isColliding(a, b, sizeA = 20, sizeB = 15) {
-	return (
-		Math.abs(a.x - b.x) < sizeA + sizeB &&
-		Math.abs(a.y - b.y) < sizeA + sizeB
-	);
+function drawEnemies() {
+    enemies.forEach(enemy => {
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        ctx.scale(0.025, 0.025);
+        ctx.translate(-540, -800);
+        ctx.fillStyle = "#ff3300";
+        ctx.fill(ENEMY_SVG_PATH);
+        ctx.restore();
+        
+        const barWidth = 40;
+        const barHeight = 4;
+        const healthPercent = enemy.health / enemy.maxHealth;
+        ctx.fillStyle = "#333";
+        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - 35, barWidth, barHeight);
+        ctx.fillStyle = healthPercent > 0.5 ? "#00ff00" : healthPercent > 0.25 ? "#ffaa00" : "#ff0000";
+        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - 35, barWidth * healthPercent, barHeight);
+    });
 }
 
-function update(){
-	try {
-		if(gameState !== "play") return;
-		frame++;
-		if(invincible>0)invincible--;
-		
-		if(respawning){
-			player.y-=6;
-			if(player.y<=canvas.height-300){respawning=false;}
-		}else{
-			let x = 0;
-			let y = 0;
-			if (keys.left)  x -= 1;
-			if (keys.right) x += 1;
-			if (keys.up)    y -= 1;
-			if (keys.down)  y += 1;
-			x += moveX;
-			y += moveY;
-			const len = Math.hypot(x, y);
-			if (len > 1) {
-				x /= len;
-				y /= len;
-			}
-			player.x += x * 6;
-			player.y += y * 6;
-			shoot = shoot || keys.shoot;
-		}
-		
-		player.x=Math.max(20,Math.min(canvas.width-20,player.x));
-		player.y=Math.max(60,Math.min(canvas.height-20,player.y));
-		
-		const weaponData = weapons[activeWeapon];
-		if(shoot && !respawning && frame%8===0){
-			playSound('shoot');
-			if(activeWeapon===0){
-				bullets.push({x:player.x,y:player.y,damage:weaponData.damage});
-			}else if(activeWeapon===1){
-				bullets.push({x:player.x-10,y:player.y,damage:weaponData.damage});
-				bullets.push({x:player.x+10,y:player.y,damage:weaponData.damage});
-			}else if (activeWeapon === 2) {
-				if (frame % 12 === 0) {
-					for (let a = -0.3; a <= 0.3; a += 0.3) {
-						bullets.push({
-							x: player.x + Math.sin(a) * 10,
-							y: player.y,
-							damage: weaponData.damage,
-							vx: Math.sin(a) * 2
-						});
-					}
-				}
-			}
-		}
-		
-		bullets.forEach((b,i)=>{
-			b.y -= 10;
-			if (b.vx) b.x += b.vx;
-			if (b.y < 0 || b.x < 0 || b.x > canvas.width) bullets.splice(i,1);
-		});
-		
-		const enemySpawnRate = currentLevel === 1 ? 50 : (currentLevel === 4 ? 30 : 40);
-		if (frame % enemySpawnRate === 0) {
-			if (currentLevel === 1 && score < 400) {
-				const canShoot = Math.random() < 0.20;
-				const size = canShoot ? 18 : 15;
-				enemies.push({
-					x: Math.random() * canvas.width,
-					y: -30,
-					canShoot,
-					shootTimer: 0,
-					size,
-					health: canShoot ? 2 : 1
-				});
-			}
-			
-			if (currentLevel >= 2) {
-				const canShoot = Math.random() < (currentLevel === 4 ? 0.5 : 0.33);
-				const size = canShoot ? 20 : 16;
-				const health = canShoot ? 3 : 2;
-				enemies.push({
-					x: Math.random() * canvas.width,
-					y: -30,
-					canShoot,
-					shootTimer: 0,
-					size,
-					health
-				});
-			}
-		}
-		
-		enemies.forEach((e, i) => {
-			e.y += 2 + currentLevel * 0.5;
-			
-			if (!respawning && invincible === 0 && isColliding(player, e, 20, e.size)) {
-				createExplosion(e.x, e.y, 30);
-				enemies.splice(i, 1);
-				
-				if (playerShield > 0) {
-					playerShield -= 40;
-					if (playerShield < 0) playerShield = 0;
-					invincible = 40;
-					playSound('damage');
-				} else {
-					lives--;
-					invincible = 60;
-					respawning = true;
-					player.y = canvas.height + 40;
-					playSound('damage');
-					vibrate([100, 50, 100]);
-					if (lives <= 0) {
-						endGame();
-						return;
-					}
-				}
-				return;
-			}
-			
-			if (e.canShoot) {
-				e.shootTimer++;
-				if (e.shootTimer % Math.max(90 - currentLevel * 15, 40) === 0) {
-					enemyBullets.push({ x: e.x, y: e.y, vx: 0, vy: 4 });
-				}
-			}
-			
-			bullets.forEach((b, j) => {
-				if (Math.abs(b.x - e.x) < e.size && Math.abs(b.y - e.y) < e.size) {
-					bullets.splice(j, 1);
-					e.health -= 1;
-					playSound('hit');
-					
-					if (e.health <= 0) {
-						createExplosion(e.x, e.y, 30);
-						
-						const dropChance = Math.random();
-						
-						if (currentLevel === 1) {
-							coins += 20;
-						} else if (currentLevel === 2) {
-							coins += 30;
-						} else {
-							coins += 40;
-						}
-						
-						if (playerShield < maxPlayerShield * 0.3 && dropChance < 0.15) {
-							spawnLoot("shield", e.x, e.y);
-						}
-						
-						if (lives <= 1 && dropChance < 0.08) {
-							spawnLoot("life", e.x, e.y);
-						}
-						
-						enemies.splice(i, 1);
-						score += e.canShoot ? 15 : 10;
-					}
-				}
-			});
-			
-			if (e.y > canvas.height) enemies.splice(i, 1);
-		});
-		
-		if ((currentLevel === 3 || currentLevel === 4) && playerShield < maxPlayerShield * 0.5 && frame % 700 === 0) {
-			spawnLoot("shield");
-		}
-		
-		if (currentLevel === 4 && frame % 1000 === 0 && !skullWeaponActive) {
-			spawnLoot("skull");
-		}
-		
-		loots.forEach((l, i) => {
-			l.y += l.speed;
-			
-			if (isColliding(player, l, 20, 20)) {
-				playSound('loot');
-				if (l.type === "shield") {
-					playerShield = Math.min(playerShield + maxPlayerShield, maxPlayerShield * 2);
-				}
-				
-				if (l.type === "skull") {
-					skullWeaponActive = true;
-					skullWeaponTimer = 600;
-					activeWeapon = 2;
-				}
-				
-				if (l.type === "life") {
-					if (lives < 3) lives++;
-				}
-				
-				loots.splice(i, 1);
-			}
-			
-			if (l.y > canvas.height) loots.splice(i, 1);
-		});
-		
-		if(currentLevel===1 && score>=400 && !boss){
-			levelComplete();
-			return;
-		}
-		
-		const bossThreshold = currentLevel === 2 ? 300 : (currentLevel === 3 ? 400 : 500);
-		
-		if(score >= bossThreshold && !boss){
-			if(currentLevel===2){
-				boss={x:canvas.width/2,y:120,life:400,max:400,phase:1,timer:0,type:"normal",id:1,size:60};
-			}else if (currentLevel === 3) {
-				boss={x:canvas.width/2,y:120,life:800,max:800,phase:1,timer:0,type:"transform",form:1,id:2,size:50};
-			}else if(currentLevel === 4){
-				boss={x:canvas.width/2,y:120,life:1200,max:1200,phase:1,timer:0,type:"shield",shield:300,maxShield:300,form:1,id:3,size:70};
-			}
-		}
-		
-		if(boss){
-			boss.timer++;
-		   // boss.x += Math.sin(frame/60) * 2;
-			// Mouvement latéral d'un bord à l'autre
-		if(!boss.direction) boss.direction = 1; // 1 = droite, -1 = gauche
-		const bossSpeed = 3;
-		const bossSize = boss.size || 60; // Utilise la taille définie ou 60 par défaut
-		boss.x += boss.direction * bossSpeed;
-		// Inversion de direction aux bords
-		if(boss.x <= bossSize + 20) {
-			boss.x = bossSize + 20;
-			boss.direction = 1;
-			} else if(boss.x >= canvas.width - bossSize - 20) {
-				boss.x = canvas.width - bossSize - 20;
-				boss.direction = -1;
-			}
-
-			if (!respawning && invincible === 0) {
-				let bossSize = boss.size;
-				if (boss.type === "transform") bossSize = 50 + boss.form * 10;
-				if (boss.type === "shield") bossSize = 70 + boss.form * 5;
-				
-				if (isColliding(player, boss, 20, bossSize)) {
-					createExplosion(player.x, player.y, 40);
-					
-					if (playerShield > 0) {
-						playerShield -= 50;
-						if (playerShield < 0) playerShield = 0;
-						invincible = 40;
-						playSound('damage');
-						vibrate([100, 50, 100, 50, 100]);
-						if (lives <= 0) {
-							endGame();
-							return;
-						}
-					}
-				}
-			}
-			
-			if(boss.type==="transform"){
-				if(boss.life<600 && boss.form===1){boss.form=2;boss.phase=2;}
-				if(boss.life<400 && boss.form===2){boss.form=3;boss.phase=3;}
-				if(boss.life<200 && boss.form===3){boss.form=4;boss.phase=4;}
-			}else if(boss.type==="shield"){
-				if(boss.life<800 && boss.form===1){boss.form=2;boss.phase=2;boss.shield=300;}
-				if(boss.life<500 && boss.form===2){boss.form=3;boss.phase=3;boss.shield=200;}
-				if(boss.life<200 && boss.form===3){boss.form=4;boss.phase=4;}
-			}else{
-				if(boss.life<boss.max*0.6)boss.phase=2;
-				if(boss.life<boss.max*0.3)boss.phase=3;
-			}
-			
-			if(boss.timer%40===0 && boss.phase===1)
-				enemyBullets.push({x:boss.x,y:boss.y,vx:0,vy:5});
-			
-			if(boss.timer%30===0 && boss.phase===2)
-				for(let a=0;a<Math.PI*2;a+=Math.PI/4)
-					enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*3,vy:Math.sin(a)*3});
-			
-			if(boss.timer%20===0 && boss.phase===3)
-				enemyBullets.push({x:boss.x,y:boss.y,vx:(player.x-boss.x)/50,vy:5});
-			
-			if(boss.phase===4 && boss.timer%15===0)
-				for(let a=0;a<Math.PI*2;a+=Math.PI/6)
-					enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*4,vy:Math.sin(a)*4});
-			
-			if(boss.type==="shield"){
-				if(boss.timer%25===0 && boss.phase===2)
-					for(let a=0;a<Math.PI*2;a+=Math.PI/3)
-						enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*5,vy:Math.sin(a)*5});
-				
-				if(boss.timer%10===0 && boss.phase===4)
-					for(let a=0;a<Math.PI*2;a+=Math.PI/8)
-						enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*6,vy:Math.sin(a)*6});
-			}
-			
-			bullets.forEach((b,i)=>{
-				if(Math.abs(b.x-boss.x)<boss.size && Math.abs(b.y-boss.y)<boss.size){
-					bullets.splice(i,1);
-					
-					if(boss.type==="shield" && boss.shield>0){
-						boss.shield -= b.damage || 5;
-						playSound('bosshit');
-						if(boss.shield<=0){
-							boss.shield=0;
-							createExplosion(boss.x,boss.y,40);
-						}
-					}else{
-						boss.life -= b.damage || 5;
-						playSound('bosshit');
-					}
-					
-					if(boss.life<=0){
-						createExplosion(boss.x,boss.y,80);
-						playSound('bossdefeat');
-						score += 500;
-						coins += 200;
-						
-						spawnLoot("shield", boss.x - 30, boss.y);
-						if (lives < 3) {
-							spawnLoot("life", boss.x + 30, boss.y);
-						}
-						
-						if (currentLevel === 2) {
-							boss = null;
-							levelComplete();
-						}else if (currentLevel === 3) {
-							boss = null;
-							levelComplete();
-						}else if (currentLevel === 4) {
-							boss = null;
-							finalVictory();
-						}
-					}
-				}
-			});
-		}
-		
-		enemyBullets.forEach((b,i)=>{
-			b.x+=b.vx;
-			b.y+=b.vy;
-			
-			if(!respawning && invincible===0 && Math.abs(b.x-player.x)<20 && Math.abs(b.y-player.y)<20){
-				enemyBullets.splice(i,1);
-				
-				if(playerShield > 0){
-					playerShield -= 20;
-					createExplosion(player.x, player.y, 25);
-					invincible = 30;
-					playSound('damage');
-					vibrate(40);
-					if(playerShield < 0) playerShield = 0;
-				} else {
-					lives--;
-					invincible=60;
-					respawning=true;
-					player.y=canvas.height+40;
-					playSound('damage');
-					vibrate([80, 50, 80]);
-					if(lives<=0) endGame();
-				}
-			}
-			
-			if(b.y>canvas.height || b.x<0 || b.x>canvas.width) enemyBullets.splice(i,1);
-		});
-		
-		explosions.forEach((e,i)=>{
-			e.frame++;
-			if(e.frame>=e.maxFrame)explosions.splice(i,1);
-		});
-		
-		if (skullWeaponActive) {
-			skullWeaponTimer--;
-			if (skullWeaponTimer <= 0) {
-				skullWeaponActive = false;
-				activeWeapon = ownedWeapons.includes(1) ? 1 : 0;
-			}
-		}
-		
-		document.getElementById("levelUI").textContent=`Niveau: ${currentLevel}`;
-		document.getElementById("scoreUI").textContent=`Score: ${score}`;
-		document.getElementById("coinsUI").textContent=`🪙${coins}`;
-		document.getElementById("livesUI").textContent="❤️".repeat(lives);
-	} catch (e) {
-		console.error("Erreur dans update()", e);
-		gameState = "pause";
-	}
-}
-function draw(){
-	ctx.clearRect(0,0,canvas.width,canvas.height);
-	
-	if(!respawning || invincible%10<5){
-		if(playerShield > 0 && maxPlayerShield > 0){
-			const shieldAlpha = (playerShield / maxPlayerShield) * 0.6;
-			const shieldPulse = Math.sin(frame / 10) * 5 + 35;
-			const gradient = ctx.createRadialGradient(
-				player.x, player.y, 0,
-				player.x, player.y, shieldPulse
-			);
-			gradient.addColorStop(0, `rgba(${skins[activeSkin].color === 'cyan' ? '0,200,255' : '255,215,0'}, ${shieldAlpha})`);
-			gradient.addColorStop(0.7, `rgba(${skins[activeSkin].color === 'cyan' ? '0,150,255' : '255,200,0'}, ${shieldAlpha * 0.3})`);
-			gradient.addColorStop(1, `rgba(${skins[activeSkin].color === 'cyan' ? '0,100,255' : '255,180,0'}, 0)`);
-			
-			ctx.fillStyle = gradient;
-			ctx.beginPath();
-			ctx.arc(player.x, player.y, shieldPulse, 0, Math.PI * 2);
-			ctx.fill();
-			
-			ctx.strokeStyle = `rgba(${skins[activeSkin].color === 'cyan' ? '100,220,255' : '255,230,100'}, ${shieldAlpha * 0.8})`;
-			ctx.lineWidth = 2;
-			ctx.beginPath();
-			ctx.arc(player.x, player.y, shieldPulse - 5, 0, Math.PI * 2);
-			ctx.stroke();
-		}
-		
-		ctx.fillStyle=skins[activeSkin].color;
-		ctx.beginPath();
-		ctx.moveTo(player.x,player.y-20);
-		ctx.lineTo(player.x-20,player.y+20);
-		ctx.lineTo(player.x+20,player.y+20);
-		ctx.fill();
-	}
-	
-	bullets.forEach(b=>{
-		ctx.fillStyle=activeWeapon===2?"#ff00ff":(activeWeapon===1?"cyan":"yellow");
-		ctx.fillRect(b.x-2,b.y-10,4,10);
-	});
-	
-	enemies.forEach(e=>{
-		ctx.fillStyle=e.canShoot?"darkred":"red";
-		ctx.fillRect(e.x-e.size,e.y-e.size,e.size*2,e.size*2);
-		
-		if (e.health > 1) {
-			const barW = e.size * 2;
-			const barH = 3;
-			ctx.fillStyle = "rgba(0,0,0,0.5)";
-			ctx.fillRect(e.x - e.size, e.y - e.size - 8, barW, barH);
-			ctx.fillStyle = "lime";
-			ctx.fillRect(e.x - e.size, e.y - e.size - 8, barW * (e.health / (e.canShoot ? 3 : 2)), barH);
-		}
-	});
-	
-	enemyBullets.forEach(b=>{
-		ctx.fillStyle="orange";
-		ctx.fillRect(b.x-4,b.y-4,8,8);
-	});
-	
-	explosions.forEach(e=>{
-		const progress=e.frame/e.maxFrame;
-		const size=e.size*(1-progress);
-		const alpha=1-progress;
-		ctx.fillStyle=`rgba(255,${100+progress*155},0,${alpha})`;
-		ctx.beginPath();
-		ctx.arc(e.x,e.y,size,0,Math.PI*2);
-		ctx.fill();
-		ctx.fillStyle=`rgba(255,255,0,${alpha*.5})`;
-		ctx.beginPath();
-		ctx.arc(e.x,e.y,size*.6,0,Math.PI*2);
-		ctx.fill();
-	});
-	
-	if(maxPlayerShield > 0){
-		document.getElementById("livesUI").textContent = "❤️".repeat(lives) + ` 🛡️${Math.max(0, Math.floor(playerShield))}`;
-	} else {
-		document.getElementById("livesUI").textContent = "❤️".repeat(lives);
-	}
-	
-	loots.forEach(l => {
-		ctx.font = "28px serif";
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-		ctx.fillText(
-			l.type === "shield" ? "🛡" : (l.type === "life" ? "❤️" : "⚒"),
-			l.x,
-			l.y
-		);
-	});
-	
-	if(boss){
-		if(boss.type==="transform"){
-			const colors=["purple","darkviolet","darkmagenta","crimson"];
-			ctx.fillStyle=colors[boss.form-1]||"purple";
-			const size=50+boss.form*10;
-			ctx.beginPath();
-			if(boss.form===4){
-				for(let i=0;i<8;i++){
-					const angle=i*Math.PI/4+frame/30;
-					const x=boss.x+Math.cos(angle)*size;
-					const y=boss.y+Math.sin(angle)*size;
-					if(i===0)ctx.moveTo(x,y);
-					else ctx.lineTo(x,y);
-				}
-			}else{
-				ctx.arc(boss.x,boss.y,size,0,Math.PI*2);
-			}
-			ctx.fill();
-		}else if(boss.type==="shield"){
-			const colors=["darkred","crimson","red","orangered"];
-			ctx.fillStyle=colors[boss.form-1]||"darkred";
-			const size=70+boss.form*5;
-			ctx.beginPath();
-			if(boss.form===4){
-				for(let i=0;i<10;i++){
-					const angle=i*Math.PI/5+frame/20;
-					const r=i%2===0?size:size*0.5;
-					const x=boss.x+Math.cos(angle)*r;
-					const y=boss.y+Math.sin(angle)*r;
-					if(i===0)ctx.moveTo(x,y);
-					else ctx.lineTo(x,y);
-				}
-			}else{
-				ctx.arc(boss.x,boss.y,size,0,Math.PI*2);
-			}
-			ctx.fill();
-			
-			if(boss.shield>0){
-				const shieldAlpha=boss.shield/boss.maxShield;
-				ctx.strokeStyle=`rgba(0,200,255,${shieldAlpha*0.8})`;
-				ctx.lineWidth=4;
-				ctx.beginPath();
-				for(let i=0;i<6;i++){
-					const angle=i*Math.PI/3+frame/15;
-					const r=size+20;
-					const x=boss.x+Math.cos(angle)*r;
-					const y=boss.y+Math.sin(angle)*r;
-					const nextAngle=(i+1)*Math.PI/3+frame/15;
-					const nextX=boss.x+Math.cos(nextAngle)*r;
-					const nextY=boss.y+Math.sin(nextAngle)*r;
-					ctx.moveTo(x,y);
-					ctx.lineTo(nextX,nextY);
-				}
-				ctx.stroke();
-				ctx.strokeStyle=`rgba(100,220,255,${shieldAlpha*0.4})`;
-				ctx.lineWidth=8;
-				ctx.stroke();
-			}
-		}else{
-			ctx.fillStyle="purple";
-			ctx.beginPath();
-			ctx.arc(boss.x,boss.y,60,0,Math.PI*2);
-			ctx.fill();
-		}
-		const barWidth = 240;
-		const barHeight = 12;
-		const barX = (canvas.width - barWidth) / 2;
-		const barY = 60;
-		const lifeRatio = boss.life / boss.max;
-		const gradient = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
-		gradient.addColorStop(0, "red");
-		gradient.addColorStop(0.5, "orange");
-		gradient.addColorStop(1, "lime");
-		
-		ctx.fillStyle = "rgba(255,0,0,0.3)";
-		ctx.fillRect(barX, barY, barWidth, barHeight);
-		ctx.fillStyle = gradient;
-		ctx.fillRect(barX, barY, barWidth * lifeRatio, barHeight);
-		ctx.strokeStyle = "white";
-		ctx.lineWidth = 2;
-		ctx.strokeRect(barX, barY, barWidth, barHeight);
-		
-		if(boss.type==="shield" && boss.shield > 0){
-			const shieldRatio = boss.shield / boss.maxShield;
-			ctx.fillStyle = "rgba(0,200,255,0.6)";
-			ctx.fillRect(barX, barY + 16, barWidth * shieldRatio, 6);
-			ctx.strokeStyle = "cyan";
-			ctx.lineWidth = 1;
-			ctx.strokeRect(barX, barY + 16, barWidth, 6);
-		}
-	}
+function drawBoss() {
+    if (!boss) return;
+    
+    const bossPaths = {
+        1: BOSS_LEVEL_1_PATH,
+        2: BOSS_LEVEL_2_PATH,
+        3: BOSS_LEVEL_3_PATH,
+        4: BOSS_LEVEL_4_PATH,
+        5: BOSS_LEVEL_5_PATH,
+        6: BOSS_LEVEL_6_PATH
+    };
+    
+    const bossPath = bossPaths[boss.level] || BOSS_LEVEL_1_PATH;
+    
+    if (boss.glowSize > 0) {
+        const glowIntensity = Math.sin(boss.glowPulse) * 0.3 + 0.7;
+        const glowColors = {
+            2: `rgba(0, 150, 255, ${0.3 * glowIntensity})`,
+            3: `rgba(150, 0, 255, ${0.35 * glowIntensity})`,
+            4: `rgba(255, 100, 0, ${0.4 * glowIntensity})`,
+            5: `rgba(255, 0, 150, ${0.45 * glowIntensity})`,
+            6: `rgba(255, 255, 0, ${0.5 * glowIntensity})`
+        };
+        
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        const gradient = ctx.createRadialGradient(boss.x, boss.y, 15, boss.x, boss.y, 40 + boss.glowSize * glowIntensity);
+        gradient.addColorStop(0, glowColors[boss.level] || glowColors[2]);
+        gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(boss.x, boss.y, 40 + boss.glowSize * glowIntensity, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+    
+    ctx.save();
+    ctx.translate(boss.x, boss.y);
+    ctx.scale(boss.scale, boss.scale);
+    
+    if (boss.level === 1) {
+        ctx.translate(-6280, -2850); 
+    } else if (boss.level >= 2 && boss.level <= 5) {
+        ctx.translate(-170, -170); 
+    } else {
+        ctx.translate(-87, -54); 
+    }
+    
+    const bossColors = {
+        1: "#990000",
+        2: "#0066cc",
+        3: "#6600cc",
+        4: "#cc6600",
+        5: "#cc0066",
+        6: "#cccc00"
+    };
+    
+    ctx.fillStyle = bossColors[boss.level] || bossColors[1];
+    ctx.fill(bossPath);
+    ctx.restore();
+    
+    const barWidth = 200;
+    const barHeight = 10;
+    const healthPercent = boss.health / boss.maxHealth;
+    ctx.fillStyle = "#333";
+    ctx.fillRect(boss.x - barWidth / 2, boss.y - 50, barWidth, barHeight);
+    ctx.fillStyle = healthPercent > 0.5 ? "#00ff00" : healthPercent > 0.25 ? "#ffaa00" : "#ff0000";
+    ctx.fillRect(boss.x - barWidth / 2, boss.y - 50, barWidth * healthPercent, barHeight);
+    
+    ctx.fillStyle = "#fff";
+    ctx.font = "14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(`BOSS Niv.${boss.level} - ${Math.ceil(boss.health)}/${boss.maxHealth}`, boss.x, boss.y - 60);
 }
 
-function levelComplete(){
-	gameState="pause";
-	localStorage.setItem("coins", coins);
-	document.getElementById("levelMsg").innerHTML =`Bravo ! vous avez passé le niveau ${currentLevel}.<br><span class="Br-msg">Vous disposez de ${coins} 🪙</span>`;
-	const box=document.getElementById("levelShopItems");
-	box.innerHTML="";
-	
-	skins.slice(1).forEach(s=>{
-		const btn=document.createElement("button");
-		const isOwned=ownedSkins.includes(s.id);
-		btn.textContent=isOwned?`${s.name} ✔️`:`${s.name} – ${s.price} 🪙`;
-		btn.onclick=()=>{
-			if(!isOwned && coins>=s.price){
-				coins-=s.price;
-				ownedSkins.push(s.id);
-				localStorage.setItem("skins",JSON.stringify(ownedSkins));
-				localStorage.setItem("coins",coins);
-				activeSkin=s.id;
-				localStorage.setItem("activeSkin",activeSkin);
-				maxPlayerShield = skins[activeSkin].shield;
-				playerShield = maxPlayerShield;
-					playClickTwoTone();
-				levelComplete();
-			}else if(isOwned){
-				activeSkin=s.id;
-				localStorage.setItem("activeSkin",activeSkin);
-				maxPlayerShield = skins[activeSkin].shield;
-				playerShield = maxPlayerShield;
-			}
-		};
-		box.appendChild(btn);
-	});
-	
-	weapons.slice(1).forEach(w=>{
-		const btn=document.createElement("button");
-		const isOwned=ownedWeapons.includes(w.id);
-		btn.textContent=isOwned?`${w.name} ✔️`:`${w.name} – ${w.price} 🪙`;
-		btn.onclick=()=>{
-			if(!isOwned && coins>=w.price){
-				coins-=w.price;
-				ownedWeapons.push(w.id);
-				localStorage.setItem("weapons",JSON.stringify(ownedWeapons));
-				localStorage.setItem("coins",coins);
-				activeWeapon=w.id;
-				localStorage.setItem("activeWeapon",activeWeapon);
-					playClickTwoTone();
-				levelComplete();
-			}else if(isOwned){
-				activeWeapon=w.id;
-				localStorage.setItem("activeWeapon",activeWeapon);
-			}
-		};
-		box.appendChild(btn);
-	});
-	
-	document.getElementById("levelComplete").classList.remove("hidden");
-	// playClickTwoTone();
+function drawBullets() {
+    bullets.forEach(b => {
+        ctx.fillStyle = "#00ff00";
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 3 * b.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    
+    bossBullets.forEach(b => {
+        ctx.fillStyle = "#ff0000";
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    });
 }
 
-function nextLevel(){
-	document.getElementById("levelComplete").classList.add("hidden");
-	currentLevel++;
-	lives = 3;
-	frame = 0;
-	maxPlayerShield = skins[activeSkin].shield;
-	playerShield = maxPlayerShield;
-	player.x = canvas.width / 2;
-	player.y = canvas.height + 40;
-	respawning = true;
-	invincible = 60;
-	moveX = 0;
-	moveY = 0;
-	shoot = false;
-	keys.left = keys.right = keys.up = keys.down = keys.shoot = false;
-	bullets = [];
-	enemies = [];
-	enemyBullets = [];
-	explosions = [];
-	loots = [];
-	boss = null;
-	updateBackground();
-	showLevelIntro();
+function drawAsteroids() {
+    asteroids.forEach(a => {
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        ctx.rotate(a.rotation);
+        ctx.scale(0.15, 0.15);
+        ctx.fillStyle = "#888";
+        ctx.fill(ASTEROID_PATH);
+        ctx.restore();
+    });
+}
+
+function drawPowerUps() {
+    powerUps.forEach(p => {
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        if (p.type === "health") {
+            ctx.fillText("❤️", p.x, p.y);
+        } else if (p.type === "autofire") {
+            ctx.fillText("🔥", p.x, p.y);
+        } else if (p.type === "coin") {
+            ctx.fillText("🪙", p.x, p.y);
+        } else if (p.type === "shield") {
+            ctx.fillText("🛡️", p.x, p.y);
+            ctx.font = "10px Arial";
+            ctx.fillText("+" + (p.shieldValue || 2), p.x, p.y + 12);
+        }
+    });
+}
+
+function drawParticles() {
+    particles.forEach(p => {
+        ctx.globalAlpha = p.life / 30;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    });
+}
+
+function drawBackground() {
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, "#000033");
+    gradient.addColorStop(1, "#000000");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function gameLoop() {
+    drawBackground();
+    
+    if (gameState === "playing" || gameState === "cinematic") {
+        updatePlayer();
+        
+        if (gameState === "playing") {
+            spawnEnemies();
+            spawnAsteroids();
+            spawnPowerUps();
+        }
+        
+        updateEnemies();
+        updateBoss();
+        updateBullets();
+        updateAsteroids();
+        updatePowerUps();
+        
+        if (gameState === "playing") {
+            checkCollisions();
+        }
+        
+        updateParticles();
+    }
+    
+    drawPlayer();
+    drawEnemies();
+    drawBoss();
+    drawBullets();
+    drawAsteroids();
+    drawPowerUps();
+    drawParticles();
+    
+    requestAnimationFrame(gameLoop);
+}
+
+function updateUI() {
+    document.getElementById("levelUI").textContent = `Niveau: ${currentLevel}`;
+    document.getElementById("scoreUI").textContent = `Score: ${score}`;
+    const hearts = "❤️".repeat(lives);
+    document.getElementById("livesUI").textContent = hearts;
+    document.getElementById("coinsUI").textContent = `🪙 ${coins}`;
+    localStorage.setItem("coins", coins);
+    document.getElementById("shieldUI").textContent = playerShield > 0 ? `🛡️ ${playerShield}` : "";
+}
+
+function showLevelIntro() {
+    const intro = document.getElementById("levelIntro");
+    intro.textContent = `NIVEAU ${currentLevel}`;
+    intro.classList.add("show");
+    setTimeout(() => {
+        intro.classList.remove("show");
+    }, 2000);
+}
+
+function startGame() {
+    gameState = "playing";
+    menu.classList.add("hidden");
+    currentLevel = 1;
+    score = 0;
+    lives = 3;
+    playerX = canvas.width / 2;
+    playerY = canvas.height - 250;
+    bullets = [];
+    enemies = [];
+    boss = null;
+    bossBullets = [];
+    asteroids = [];
+    powerUps = [];
+    particles = [];
+    autoFire = false;
+    playerShield = 0;
+    
+    invulnerable = true;
+    invulnerableUntil = Date.now() + 4000;
+    
+    ownedWeapons = JSON.parse(localStorage.getItem("weapons")) || [0];
+    activeWeapon = parseInt(localStorage.getItem("activeWeapon")) || 0;
+    applyWeaponStats();
+    
+    updateUI();
+    showLevelIntro();
+
+    setTimeout(() => {
+        if (gameState === "playing") {
+            spawnBoss();
+        }
+    }, 30000);
+}
+
+function startVictoryCinematic() {
+
+    invulnerable = true;
+    invulnerableUntil = Date.now() + 5000; 
+    
+    const bossX = boss ? boss.x : canvas.width / 2;
+    const bossY = boss ? boss.y : 150;
+    const wasInCinematic = gameState;
+    gameState = "cinematic";
+    boss = null;
+    
+    createExplosion(bossX, bossY);
+    setTimeout(() => createExplosion(bossX + 30, bossY - 20), 100);
+    setTimeout(() => createExplosion(bossX - 30, bossY + 20), 200);
+    setTimeout(() => createExplosion(bossX + 20, bossY + 30), 300);
+    setTimeout(() => createExplosion(bossX - 20, bossY - 30), 400);
+    
+    setTimeout(() => {
+        enemies.forEach(enemy => {
+            enemy.vy = -8; 
+        });
+    }, 500);
+    
+    const startPlayerX = playerX;
+    const startPlayerY = playerY;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const targetX = canvas.width / 2;
+    const targetY = canvas.height - 250;
+    const moveStartTime = Date.now();
+    const moveDuration = 2500; 
+    
+    const moveInterval = setInterval(() => {
+        const elapsed = Date.now() - moveStartTime;
+        const progress = Math.min(elapsed / moveDuration, 1);
+        
+        if (progress < 0.8) {
+            const t = (progress / 0.8) * Math.PI * 2;
+            const scale = 120;
+            
+            const a = scale;
+            const x = centerX + (a * Math.sin(t)) / (1 + Math.cos(t) * Math.cos(t));
+            const y = centerY + (a * Math.sin(t) * Math.cos(t)) / (1 + Math.cos(t) * Math.cos(t));
+            
+            playerX = x;
+            playerY = y;
+        } else {
+
+            const returnProgress = (progress - 0.8) / 0.2;
+            const easeProgress = returnProgress < 0.5 
+                ? 2 * returnProgress * returnProgress 
+                : 1 - Math.pow(-2 * returnProgress + 2, 2) / 2;
+            
+            const lastT = Math.PI * 2;
+            const a = 120;
+            const lastX = centerX + (a * Math.sin(lastT)) / (1 + Math.cos(lastT) * Math.cos(lastT));
+            const lastY = centerY + (a * Math.sin(lastT) * Math.cos(lastT)) / (1 + Math.cos(lastT) * Math.cos(lastT));
+            
+            playerX = lastX + (targetX - lastX) * easeProgress;
+            playerY = lastY + (targetY - lastY) * easeProgress;
+        }
+        
+        if (progress >= 1) {
+            clearInterval(moveInterval);
+            playerX = targetX;
+            playerY = targetY;
+        }
+    }, 16);
+    
+    setTimeout(() => {
+
+        enemies = [];
+        bossBullets = [];
+        gameState = "levelComplete";
+        
+        if (currentLevel >= 6) {
+            finalVictory();
+        } else {
+            levelComplete();
+        }
+    }, 3500); 
+}
+
+function levelComplete() {
+    gameState = "paused";
+    
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem("bestScore", bestScore);
+        playVictoryWithRecordBonus();
+    } else {
+        playVictory();
+    }
+    
+    let message = `<div style='text-align:center;'>Boss du niveau ${currentLevel} vaincu !</div><br>`;
+    message += `<div style='text-align:center;'>Score : ${score}</div>`;
+    document.getElementById("levelMsg").innerHTML = message;
+    
+    document.getElementById("shopCoins").textContent = coins;
+    
+    const shopDiv = document.getElementById("levelShopItems");
+    shopDiv.innerHTML = "";
+    
+    const btnLife = document.createElement("button");
+    btnLife.textContent = lives >= 3 ? "Vies au maximum (3 ❤️)" : "❤️ Vies réstaurées - 100 🪙";
+    btnLife.disabled = coins < 100 || lives >= 3;
+    btnLife.onclick = () => {
+        if (coins >= 100 && lives < 3) {
+            coins -= 100;
+            lives = 3;
+            localStorage.setItem("coins", coins);
+            playClickTwoTone();
+            updateUI();
+            levelComplete();
+        }
+    };
+    shopDiv.appendChild(btnLife);
+    
+    weaponsCatalog.slice(2).forEach(w => {
+        const btn = document.createElement("button");
+        const isOwned = ownedWeapons.includes(w.id);
+        const canAfford = coins >= w.price;
+        
+        btn.textContent = isOwned ? `${w.name} ✔️` : `${w.name} – ${w.price} 🪙`;
+        
+        if (!isOwned && !canAfford) {
+            btn.disabled = true;
+        }
+        
+        btn.onclick = () => {
+            if (!isOwned && coins >= w.price) {
+                coins -= w.price;
+                ownedWeapons.push(w.id);
+                localStorage.setItem("weapons", JSON.stringify(ownedWeapons));
+                localStorage.setItem("coins", coins);
+                activeWeapon = w.id;
+                localStorage.setItem("activeWeapon", activeWeapon);
+                applyWeaponStats();
+                updateUI();
+                playClickTwoTone();
+                levelComplete();
+            } else if (isOwned) {
+                activeWeapon = w.id;
+                localStorage.setItem("activeWeapon", activeWeapon);
+                applyWeaponStats();
+                updateUI();
+            }
+        };
+        shopDiv.appendChild(btn);
+    });
+    
+    document.getElementById("levelComplete").classList.remove("hidden");
+}
+
+function nextLevel() {
+    currentLevel++;
+    gameState = "playing";
+    document.getElementById("levelComplete").classList.add("hidden");
+    
+    playerX = canvas.width / 2;
+    playerY = canvas.height - 250;
+    
+    bullets = [];
+    enemies = [];
+    boss = null;
+    bossBullets = [];
+    asteroids = [];
+    powerUps = [];
+    particles = [];
+    autoFire = false;
+    
+    invulnerable = true;
+    invulnerableUntil = Date.now() + 3000;
+    
+    updateUI();
+    showLevelIntro();
+    setTimeout(() => {
+        if (gameState === "playing") {
+            spawnBoss();
+        }
+    }, 30000);
 }
 
 function resetFullProgression() {
-	coins = 0;
-	localStorage.setItem("coins", 0);
-	ownedSkins = [0];
-	activeSkin = 0;
-	localStorage.setItem("skins", JSON.stringify(ownedSkins));
-	localStorage.setItem("activeSkin", 0);
-	ownedWeapons = [0];
-	activeWeapon = 0;
-	localStorage.setItem("weapons", JSON.stringify(ownedWeapons));
-	localStorage.setItem("activeWeapon", 0);
-	document.getElementById("coinsUI").textContent = "🪙0";
+    currentLevel = 1;
+    score = 0;
+    lives = 3;
+    coins = 0;
+    ownedWeapons = [0];
+    activeWeapon = 0;
+    applyWeaponStats();
+    localStorage.setItem("coins", 0);
+    localStorage.setItem("weapons", JSON.stringify(ownedWeapons));
+    localStorage.setItem("activeWeapon", 0);
+    document.getElementById("coinsUI").textContent = "🪙0";
 }
 
-function endGame(){
-	gameState = "over";
-	// ⚠️ On NE TOUCHE PAS au bestScore ici
-	document.getElementById("currentLevel").textContent = currentLevel;
-	document.getElementById("finalScore").textContent = score;
-	document.getElementById("bestScore").textContent = bestScore;
-
-	playGameOver();
-	resetFullProgression();
-	document.getElementById("gameover").classList.remove("hidden");
+function endGame() {
+    if (gameState === "over") return; 
+    
+    gameState = "over";
+    document.getElementById("currentLevel").textContent = currentLevel;
+    document.getElementById("finalScore").textContent = score;
+    document.getElementById("bestScore").textContent = bestScore;
+    playGameOver();
+    resetFullProgression();
+    
+    document.getElementById("menu").classList.add("hidden");
+    document.getElementById("levelComplete").classList.add("hidden");
+    document.getElementById("victory").classList.add("hidden");
+    document.getElementById("MsGbuton").classList.add("hidden");
+    
+    document.getElementById("gameover").classList.remove("hidden");
 }
 
-function backToMenu(){
-	document.getElementById("gameover").classList.add("hidden");
-	document.getElementById("victory").classList.add("hidden");
-	document.getElementById("MsGbuton").classList.add("hidden");
-	document.getElementById("menu").classList.remove("hidden");
-	document.body.style.background = "#000";
+function backToMenu() {
+    document.getElementById("gameover").classList.add("hidden");
+    document.getElementById("victory").classList.add("hidden");
+    document.getElementById("MsGbuton").classList.add("hidden");
+    document.getElementById("menu").classList.remove("hidden");
+    document.body.style.background = "#000";
 }
 
 function finalVictory() {
-	gameState = "over";
-	let message = "";
-
-	if (score > bestScore) {
-		bestScore = score;
-		localStorage.setItem("bestScore", bestScore);
-		message = "<div style='text-align:center;'>⭐ NOUVEAU RECORD ⭐</div><br>";
-		playVictoryFinalWithRecordBonus();
-	} else {
-		playVictoryFinal();
-	}
-	message += "<div style='text-align:center;'>Vous avez vaincu le Boss Final Oméga !</div><br>";
-	message += "<div style='text-align:center;'>L'univers est sauvé. Merci d'avoir joué.</div>";
-	document.getElementById("victoryMsg").innerHTML = message;
-	document.getElementById("victoryScore").textContent = score;
-	document.getElementById("MeilleurScore").textContent = bestScore;
-	resetFullProgression();
-	document.getElementById("victory").classList.remove("hidden");
+    gameState = "over";
+    let message = "";
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem("bestScore", bestScore);
+        message = "<div style='text-align:center;'>⭐ NOUVEAU RECORD ⭐</div><br>";
+        playVictoryFinalWithRecordBonus();
+    } else {
+        playVictoryFinal();
+    }
+    message += "<div style='text-align:center;'>Vous avez vaincu le Boss Final Oméga !</div><br>";
+    message += "<div style='text-align:center;'>L'univers est sauvé. Merci d'avoir joué.</div>";
+    document.getElementById("victoryMsg").innerHTML = message;
+    document.getElementById("victoryScore").textContent = score;
+    document.getElementById("MeilleurScore").textContent = bestScore;
+    resetFullProgression();
+    document.getElementById("victory").classList.remove("hidden");
 }
+
+function BoutonInfo() {
+    document.getElementById("menu").classList.add("hidden");
+    document.getElementById("MsGbuton").classList.remove("hidden");
+}
+
+function requestFullscreenMobile() {
+    if (!document.fullscreenElement && isTouchDevice) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+}
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+function playTone(freq, duration, type = "sine", volume = 0.15) {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.frequency.value = freq;
+    osc.type = type;
+    gain.gain.setValueAtTime(volume, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+    osc.start(audioContext.currentTime);
+    osc.stop(audioContext.currentTime + duration);
+}
+function playShoot() {playTone(800, 0.05, "square", 0.1);}
+function playEnemyShoot() {playTone(300, 0.1, "sawtooth", 0.08);}
+function playBossShoot() {playTone(200, 0.15, "sawtooth", 0.12);}
+function playHit() {playTone(600, 0.05, "triangle", 0.1);}
+function playExplosion() {
+    playTone(150, 0.2, "sawtooth", 0.15);
+    setTimeout(() => playTone(100, 0.3, "sawtooth", 0.1), 50);
+}
+function playBossExplosion() {
+    playTone(100, 0.5, "sawtooth", 0.2);
+    setTimeout(() => playTone(80, 0.6, "sawtooth", 0.15), 100);
+    setTimeout(() => playTone(60, 0.7, "sawtooth", 0.1), 200);
+}
+function playPlayerHit() {playTone(400, 0.15, "triangle", 0.15);}
+function playPowerUp() {
+    playTone(600, 0.1, "sine", 0.1);
+    setTimeout(() => playTone(800, 0.1, "sine", 0.1), 100);
+}
+function playVictory() {
+    playTone(523, 0.15, "sine", 0.15);
+    setTimeout(() => playTone(659, 0.15, "sine", 0.15), 150);
+    setTimeout(() => playTone(784, 0.3, "sine", 0.15), 300);
+}
+function playVictoryWithRecordBonus() {
+    playVictory();
+    setTimeout(() => {
+        playTone(1047, 0.15, "sine", 0.2);
+        setTimeout(() => playTone(1319, 0.3, "sine", 0.2), 150);
+    }, 600);
+}
+function playVictoryFinal() {
+    playTone(523, 0.2, "sine", 0.15);
+    setTimeout(() => playTone(659, 0.2, "sine", 0.15), 200);
+    setTimeout(() => playTone(784, 0.2, "sine", 0.15), 400);
+    setTimeout(() => playTone(1047, 0.4, "sine", 0.2), 600);
+}
+function playVictoryFinalWithRecordBonus() {
+    playVictoryFinal();
+    setTimeout(() => {
+        playTone(1319, 0.2, "sine", 0.25);
+        setTimeout(() => playTone(1568, 0.5, "sine", 0.25), 200);
+    }, 1000);
+}
+function playGameOver() {
+    playTone(400, 0.2, "sawtooth", 0.15);
+    setTimeout(() => playTone(300, 0.2, "sawtooth", 0.15), 200);
+    setTimeout(() => playTone(200, 0.4, "sawtooth", 0.15), 400);
+}
+function playClickTwoTone() {
+    playTone(800, 0.05, "square", 0.1);
+    setTimeout(() => playTone(1000, 0.05, "square", 0.1), 60);
+}
+function playIntroMusic() {
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((note, i) => {
+        setTimeout(() => playTone(note, 0.15, "sine", 0.1), i * 150);
+    });
+}
+
+function vibrate(duration) {
+    if (navigator.vibrate) {
+        navigator.vibrate(duration);
+    }
+}
+
+function createStars() {
+    for (let i = 0; i < 50; i++) {
+        const star = document.createElement("div");
+        star.className = "star";
+        star.style.width = star.style.height = `${Math.random() * 3}px`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.animationDuration = `${2 + Math.random() * 3}s`;
+        document.body.appendChild(star);
+    }
+}
+
+function createShootingStar() {
+    const star = document.createElement("div");
+    star.className = "shooting-star";
+    star.style.left = `${Math.random() * 50}%`;
+    star.style.top = `${Math.random() * 50}%`;
+    document.body.appendChild(star);
+    setTimeout(() => star.remove(), 1200);
+}
+
+createStars();
+setInterval(createShootingStar, 5000);
+
+gameLoop();
 </script>
 </body>
 </html>
